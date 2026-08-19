@@ -608,6 +608,8 @@ def _apply_coverage_slice(
 
 
 _DEFAULT_SPACING = 0.3
+_MIN_REGION_RATIO = 0.00025
+_MIN_REGION_FLOOR = 16
 _DEMO_LAYOUT_CACHE: dict[str, list] = {}
 _DEMO_LAYOUT_CACHE_LIMIT = 16
 
@@ -654,6 +656,7 @@ def fill_region_with_stamps(
     size_ratio: float,
     min_size: int,
     max_size: int,
+    min_region: int,
     spacing_factor: float,
     size_jitter: float,
     angle_jitter: float,
@@ -667,7 +670,7 @@ def fill_region_with_stamps(
 ) -> float:
     ys, xs = np.where(region)
     region_area = float(xs.size)
-    if region_area < 16:
+    if region_area < max(1, int(min_region)):
         return 0.0
     long_side = max(int(xs.max()) - int(xs.min()) + 1, int(ys.max()) - int(ys.min()) + 1)
     lo = max(4, int(min_size))
@@ -792,6 +795,7 @@ def stamp_censor_image(
     elif target > 1.0:
         target = 1.0
     coverages: list[float] = []
+    min_region = max(_MIN_REGION_FLOOR, int(round(mask_bool.size * _MIN_REGION_RATIO)))
     for region in iter_connected_regions(mask_bool):
         cov = fill_region_with_stamps(
             base,
@@ -801,6 +805,7 @@ def stamp_censor_image(
             size_ratio=size_ratio,
             min_size=min_size,
             max_size=max_size,
+            min_region=min_region,
             spacing_factor=spacing_factor,
             size_jitter=size_jitter,
             angle_jitter=angle_jitter,

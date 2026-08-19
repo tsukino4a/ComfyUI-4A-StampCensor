@@ -239,6 +239,7 @@ function openPaletteBeside(widget, node, e, pos) {
         node.graph._version++;
         node.setDirtyCanvas(true, true);
         node._4aPaintColorBar?.();
+        rememberNodeParams(node);
         node._4aRefreshPreview?.();
         paint();
     };
@@ -779,6 +780,7 @@ function enhanceCompactSlider(node, widget) {
             widget._4aValue = q;
         }
         paint();
+        rememberNodeParams(node);
         node.setDirtyCanvas?.(true, true);
         node._4aRefreshPreview?.(PREVIEW_DEBOUNCE_MS);
     };
@@ -872,6 +874,55 @@ function isChromeWidget(w) {
     if (w.type === "converted-widget") return true;
     if (w.name === "4A_COLOR_DOM" || w.name?.startsWith("4A_SLIDER_") || w.type === "4a_slider") return true;
     return false;
+}
+
+function isStampPackNode(node) {
+    return isStampLoadNode(node) || isCensorNode(node);
+}
+
+function snapshotNodeParams(node) {
+    const out = {};
+    for (const w of node.widgets || []) {
+        if (!w?.name || isChromeWidget(w)) continue;
+        out[w.name] = w._4aValue ?? w.value;
+    }
+    return out;
+}
+
+function rememberNodeParams(node) {
+    if (!node) return;
+    node._4aSavedParams = snapshotNodeParams(node);
+}
+
+function restoreNodeParams(node, snap) {
+    if (!node || !snap) return;
+    for (const w of node.widgets || []) {
+        if (!w?.name || !Object.prototype.hasOwnProperty.call(snap, w.name)) continue;
+        const v = snap[w.name];
+        if (v === undefined) continue;
+        w.value = v;
+        if (w._4aSliderEnhanced && Number.isFinite(Number(v))) w._4aValue = Number(v);
+        w._4aPaintSlider?.();
+    }
+    node._4aPaintColorBar?.();
+}
+
+function syncEnhancedFromWidgets(node) {
+    for (const w of node.widgets || []) {
+        if (!w._4aSliderEnhanced) continue;
+        const raw = Number(w.value);
+        if (Number.isFinite(raw)) w._4aValue = raw;
+        w._4aPaintSlider?.();
+    }
+    node._4aPaintColorBar?.();
+    rememberNodeParams(node);
+}
+
+function restoreAllRememberedParams() {
+    for (const n of app.graph?._nodes || []) {
+        if (!isStampPackNode(n)) continue;
+        restoreNodeParams(n, n._4aSavedParams);
+    }
 }
 
 function widgetValues(node) {
@@ -1479,6 +1530,7 @@ function hookWidgets(node, refreshFn) {
         w.callback = function (...args) {
             const r = prev?.apply(this, args);
             node._4aPaintColorBar?.();
+            rememberNodeParams(node);
             if (w.name === "stamp_angle") {
                 node.setDirtyCanvas?.(true, true);
                 node._4aRefreshPreview(ANGLE_CENSOR_DEBOUNCE_MS);
@@ -1619,6 +1671,7 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
             shrinkCustomLoadIfBloated(node);
         }
         requestAnimationFrame(() => applyPreviewMinSize(node));
+        syncEnhancedFromWidgets(node);
         node._4aRefreshPreview?.();
         return;
     }
@@ -1650,6 +1703,7 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
             return r;
         };
     }
+    syncEnhancedFromWidgets(node);
     node._4aRefreshPreview();
 }
 
@@ -1666,8 +1720,11 @@ async function fetchStampPresets({ refresh = false } = {}) {
 function applyStampPresets(node, names) {
     const w = node.widgets?.find((x) => x.name === "stamp_preset");
     if (!w || !names?.length) return false;
-    w.options = { ...(w.options || {}), values: names };
-    if (names.includes(w.value)) return false;
+    const values = [...names];
+    if (w.value && !values.includes(w.value)) values.unshift(w.value);
+    w.options = { ...(w.options || {}), values };
+    if (w.value && values.includes(w.value)) return false;
+    if (w.value != null && String(w.value).trim() !== "") return false;
     w.value = names.includes("heart_wobbly_a") ? "heart_wobbly_a" : names[0];
     return true;
 }
@@ -1696,8 +1753,12 @@ function refreshStampPresetCombos({ refresh = true } = {}) {
 
 function setupStampLoad(node) {
     setupStampSourceNode(node, { imageDrop: false });
-    if (_lastStampPresets) applyStampPresets(node, _lastStampPresets);
-    else refreshStampPresetCombos({ refresh: true }).then(() => applyStampPresets(node, _lastStampPresets));
+    const keep = () => {
+        applyStampPresets(node, _lastStampPresets);
+        restoreNodeParams(node, node._4aSavedParams);
+    };
+    if (_lastStampPresets) keep();
+    else refreshStampPresetCombos({ refresh: true }).then(keep);
 }
 
 function setupStampCustomLoad(node) {
@@ -1713,6 +1774,7 @@ function setupStampCensor(node) {
         hideSyncedCensorAngle(node);
         attachCanvasPreview(node, "square");
         hookWidgets(node, refreshCensorDemo);
+        syncEnhancedFromWidgets(node);
         node._4aRefreshPreview?.();
         return;
     }
@@ -1755,6 +1817,7 @@ function setupStampCensor(node) {
             return r;
         };
     }
+    syncEnhancedFromWidgets(node);
     node._4aRefreshPreview();
 }
 
@@ -1767,6 +1830,7 @@ app.registerExtension({
         } catch (e) {
             console.warn("[4A StampCensor] preset refresh on load failed", e);
         }
+        restoreAllRememberedParams();
     },
 
     async refreshComboInNodes() {
@@ -1775,6 +1839,9 @@ app.registerExtension({
         } catch (e) {
             console.warn("[4A StampCensor] preset refresh on R failed", e);
         }
+        restoreAllRememberedParams();
+        requestAnimationFrame(restoreAllRememberedParams);
+        setTimeout(restoreAllRememberedParams, 50);
     },
 
     getCustomWidgets() {
@@ -1788,6 +1855,18 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
+        if (
+            nodeData?.name === "StampLoad4A" ||
+            nodeData?.name === "StampCustomLoad4A" ||
+            nodeData?.name === "StampCensor4A"
+        ) {
+            const prevCfg = nodeType.prototype.onConfigure;
+            nodeType.prototype.onConfigure = function (info) {
+                const r = prevCfg?.apply(this, arguments);
+                syncEnhancedFromWidgets(this);
+                return r;
+            };
+        }
         if (nodeData?.name === "StampLoad4A" || nodeData?.name === "StampCustomLoad4A") {
             const prev = nodeType.prototype.onNodeCreated;
             const setup = nodeData.name === "StampCustomLoad4A" ? setupStampCustomLoad : setupStampLoad;
@@ -1818,14 +1897,17 @@ app.registerExtension({
     loadedGraphNode(node) {
         if (isBuiltinStampLoadNode(node)) {
             setupStampLoad(node);
+            syncEnhancedFromWidgets(node);
             syncLoadAngleToCensors(node);
         }
         if (isCustomStampLoadNode(node)) {
             setupStampCustomLoad(node);
+            syncEnhancedFromWidgets(node);
             syncLoadAngleToCensors(node);
         }
         if (node.comfyClass === "StampCensor4A" || node.type === "StampCensor4A") {
             setupStampCensor(node);
+            syncEnhancedFromWidgets(node);
             syncCensorAngleFromLoad(node);
         }
     },

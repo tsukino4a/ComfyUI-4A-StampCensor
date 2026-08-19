@@ -10,6 +10,12 @@
 
 ## 亮点
 
+### 用图案代替马赛克
+
+爱心、涂鸦横条、星星、叉，或你自己的贴纸——同一条遮罩链路，不再像素化。
+
+<img src="docs/images/result.png" alt="效果对比" width="720">
+
 ### 贴纸加载 + 色盘上色
 
 选内置形状、用色盘染色、设初始角度。节点预览会跟着角度转；输出的 `STAMP` 本身不转，留给贴纸打码做自动旋转 / 抖动。
@@ -35,30 +41,34 @@
 
 ### 按覆盖率 / 间距铺满遮罩
 
-接 `image` + `mask` + `stamp`。每个连通区域单独算长边朝向（可关）、随机尺寸和旋转矩形碰撞，直到达到**覆盖率**。贴纸可以溢出遮罩。接好贴纸后，节点底部会更新演示预览。
+接 `image` + `mask` + `stamp`。每个连通区域单独算长边朝向（可关）、随机尺寸和旋转矩形碰撞，直到达到**覆盖率**。过小的碎点（比如 SAM 噪点）会按整图比例自动丢掉。贴纸可以溢出遮罩。接好贴纸后，节点底部会更新演示预览。
 
 <img src="docs/images/stamp_censor.png" alt="贴纸打码" width="720">
 
-### 用图案代替马赛克
+### 自动旋转
 
-爱心、涂鸦横条、星星、叉，或你自己的贴纸——同一条遮罩链路，不再像素化。
+开：每个遮罩连通域先对齐自己的长边朝向，再加上贴纸加载 / 自定义加载的角度。关：只用加载节点的角度。贴纸默认朝上。角度抖动叠在这之后。
 
-<img src="docs/images/result.png" alt="效果对比" width="720">
+<img src="docs/images/stamp_autorotate.png" alt="自动旋转" width="720">
 
 ## 安装
-
-### ComfyUI-Manager（推荐）
-
-搜索 **4A Stamp Censor** / `ComfyUI-4A-StampCensor` 安装。
-
-### 手动安装
 
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/tsukino4a/ComfyUI-4A-StampCensor.git ComfyUI-4A-StampCensor
 ```
 
-没有额外 pip 依赖。安装后重启 ComfyUI。改 Python / 语言文件后再重启一次；只改 JS 时浏览器硬刷新（Ctrl+F5）即可。
+也可以在 ComfyUI-Manager 里搜索 **4A Stamp Censor**。装完重启 ComfyUI。
+
+示例在 [`example_workflows/`](example_workflows/)。跑之前在 Load Image 里换成你自己的图。种子每次排队会随机。
+
+SAM3 · [`01_SAM3_StampCensor.json`](example_workflows/01_SAM3_StampCensor.json)
+
+<img src="docs/images/sam3_workflow.png" alt="SAM3 示例工作流" width="480">
+
+Impact Pack YOLO NSFW · [`02_ImpactPack_NSFW_StampCensor.json`](example_workflows/02_ImpactPack_NSFW_StampCensor.json)
+
+<img src="docs/images/yolo_workflow.png" alt="YOLO NSFW 示例工作流" width="480">
 
 ## 快速开始
 

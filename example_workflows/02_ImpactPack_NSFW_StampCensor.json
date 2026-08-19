@@ -1,0 +1,878 @@
+{
+  "id": "11457357-22a6-414f-a665-ce008a17fbe5",
+  "revision": 0,
+  "last_node_id": 183,
+  "last_link_id": 391,
+  "nodes": [
+    {
+      "id": 177,
+      "type": "MaskPreview",
+      "pos": [
+        1522.9855531035928,
+        -348.1060514683027
+      ],
+      "size": [
+        210,
+        258
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 382
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskPreview",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 175,
+      "type": "LoadImage",
+      "pos": [
+        358.22969077022,
+        -354.1546734333233
+      ],
+      "size": [
+        299.33041200508364,
+        472.9918777685041
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            369,
+            380
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 174,
+      "type": "StampLoad4A",
+      "pos": [
+        684.7704825975771,
+        -687.0798246435909
+      ],
+      "size": [
+        217.3692859671313,
+        268
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "stamp",
+          "type": "STAMP",
+          "links": [
+            368
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StampLoad4A",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "heart_standard",
+        "#6de498",
+        0,
+        ""
+      ],
+      "widgets_values_named": {
+        "stamp_preset": "heart_standard",
+        "stamp_color": "#6de498",
+        "stamp_angle": 0,
+        "4A_SLIDER_stamp_angle": ""
+      }
+    },
+    {
+      "id": 181,
+      "type": "86d7b2f2-e73f-472b-9548-85cd749176d9",
+      "pos": [
+        685.7972151078036,
+        -354.0210789632247
+      ],
+      "size": [
+        212.5940088489441,
+        208
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 380
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            381,
+            382
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "previewExposures": []
+      },
+      "widgets_values": [
+        0.5,
+        4,
+        3,
+        10,
+        "pussy, anus, penis, testicles, nipples",
+        "segm/ntd11_anime_nsfw_segm_v5-variant1.pt"
+      ],
+      "widgets_values_named": {
+        "threshold": 0.5,
+        "dilation": 4,
+        "crop_factor": 3,
+        "drop_size": 10,
+        "labels": "pussy, anus, penis, testicles, nipples",
+        "model_name": "segm/ntd11_anime_nsfw_segm_v5-variant1.pt"
+      }
+    },
+    {
+      "id": 182,
+      "type": "SeedNode",
+      "pos": [
+        686.0501817461178,
+        -84.04633656169949
+      ],
+      "size": [
+        210,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "seed",
+          "type": "INT",
+          "links": [
+            390
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SeedNode",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        757658294651495,
+        "randomize"
+      ],
+      "widgets_values_named": {
+        "seed": 757658294651495,
+        "fixed": "randomize"
+      }
+    },
+    {
+      "id": 155,
+      "type": "StampCensor4A",
+      "pos": [
+        918.1919818519439,
+        -361.2168289430134
+      ],
+      "size": [
+        300.8170352278546,
+        508.59657621966085
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 369
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 381
+        },
+        {
+          "name": "stamp",
+          "type": "STAMP",
+          "link": 368
+        },
+        {
+          "name": "seed",
+          "shape": 7,
+          "type": "INT",
+          "link": 390
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            391
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StampCensor4A",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        true,
+        24,
+        512,
+        1,
+        "",
+        0.8,
+        "",
+        0.4,
+        "",
+        0,
+        "",
+        0,
+        "",
+        0
+      ],
+      "widgets_values_named": {
+        "auto_rotate": true,
+        "min_size": 24,
+        "max_size": 512,
+        "size_ratio": 1,
+        "4A_SLIDER_size_ratio": "",
+        "target_coverage": 0.8,
+        "4A_SLIDER_target_coverage": "",
+        "spacing_factor": 0.4,
+        "4A_SLIDER_spacing_factor": "",
+        "size_jitter": 0,
+        "4A_SLIDER_size_jitter": "",
+        "angle_jitter": 0,
+        "4A_SLIDER_angle_jitter": "",
+        "stamp_angle": 0
+      }
+    },
+    {
+      "id": 183,
+      "type": "SaveImage",
+      "pos": [
+        1239.5447735373234,
+        -356.3078057171444
+      ],
+      "size": [
+        259.53547500199693,
+        362.7473647298598
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 391
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "StempCensor"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "StempCensor"
+      }
+    }
+  ],
+  "links": [
+    [
+      368,
+      174,
+      0,
+      155,
+      2,
+      "STAMP"
+    ],
+    [
+      369,
+      175,
+      0,
+      155,
+      0,
+      "IMAGE"
+    ],
+    [
+      380,
+      175,
+      0,
+      181,
+      0,
+      "IMAGE"
+    ],
+    [
+      381,
+      181,
+      0,
+      155,
+      1,
+      "MASK"
+    ],
+    [
+      382,
+      181,
+      0,
+      177,
+      0,
+      "MASK"
+    ],
+    [
+      390,
+      182,
+      0,
+      155,
+      3,
+      "INT"
+    ],
+    [
+      391,
+      155,
+      0,
+      183,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "definitions": {
+    "subgraphs": [
+      {
+        "id": "86d7b2f2-e73f-472b-9548-85cd749176d9",
+        "version": 1,
+        "state": {
+          "lastGroupId": 0,
+          "lastNodeId": 183,
+          "lastLinkId": 391,
+          "lastRerouteId": 0
+        },
+        "revision": 0,
+        "config": {},
+        "name": "YOLO Detector",
+        "inputNode": {
+          "id": -10,
+          "bounding": [
+            -47.6356859516427,
+            -365.37470032783324,
+            128,
+            188
+          ]
+        },
+        "outputNode": {
+          "id": -20,
+          "bounding": [
+            931.4856618867852,
+            -365.37470032783324,
+            128,
+            68
+          ]
+        },
+        "inputs": [
+          {
+            "id": "2a404d58-19b5-4a9b-a937-67b193b4b2d0",
+            "name": "image",
+            "type": "IMAGE",
+            "linkIds": [
+              377
+            ],
+            "pos": [
+              56.3643140483573,
+              -341.37470032783324
+            ]
+          },
+          {
+            "id": "9a37a8dc-fdb6-4f8a-a916-ab48fa6849c1",
+            "name": "threshold",
+            "type": "FLOAT",
+            "linkIds": [
+              383
+            ],
+            "pos": [
+              56.3643140483573,
+              -321.37470032783324
+            ]
+          },
+          {
+            "id": "b8480769-c945-4eb7-a1d2-36feff7f6b00",
+            "name": "dilation",
+            "type": "INT",
+            "linkIds": [
+              384
+            ],
+            "pos": [
+              56.3643140483573,
+              -301.37470032783324
+            ]
+          },
+          {
+            "id": "efc95b17-bd89-4ba0-9385-a075e48c5792",
+            "name": "crop_factor",
+            "type": "FLOAT",
+            "linkIds": [
+              385
+            ],
+            "pos": [
+              56.3643140483573,
+              -281.37470032783324
+            ]
+          },
+          {
+            "id": "c3f616f1-0467-4563-a396-832c08dad7c9",
+            "name": "drop_size",
+            "type": "INT",
+            "linkIds": [
+              386
+            ],
+            "pos": [
+              56.3643140483573,
+              -261.37470032783324
+            ]
+          },
+          {
+            "id": "88d82e23-e13d-4b13-96ae-e2e58b81d82f",
+            "name": "labels",
+            "type": "STRING",
+            "linkIds": [
+              387
+            ],
+            "pos": [
+              56.3643140483573,
+              -241.37470032783324
+            ]
+          },
+          {
+            "id": "126c8852-c53c-43f5-8652-8ba77e6c3f75",
+            "name": "model_name",
+            "type": "COMBO",
+            "linkIds": [
+              389
+            ],
+            "pos": [
+              56.3643140483573,
+              -221.37470032783324
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "id": "806c520f-eb96-419a-8910-d45909d43b83",
+            "name": "MASK",
+            "type": "MASK",
+            "linkIds": [
+              379
+            ],
+            "pos": [
+              955.4856618867852,
+              -341.37470032783324
+            ]
+          }
+        ],
+        "widgets": [],
+        "nodes": [
+          {
+            "id": 180,
+            "type": "SegsToCombinedMask",
+            "pos": [
+              656.7314788571637,
+              -337.71535001797133
+            ],
+            "size": [
+              217.7505859375,
+              26
+            ],
+            "flags": {},
+            "order": 2,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "segs",
+                "name": "segs",
+                "type": "SEGS",
+                "link": 376
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "MASK",
+                "name": "MASK",
+                "type": "MASK",
+                "links": [
+                  379
+                ]
+              }
+            ],
+            "properties": {
+              "Node name for S&R": "SegsToCombinedMask",
+              "ue_properties": {
+                "widget_ue_connectable": {},
+                "input_ue_unconnectable": {},
+                "version": "7.8"
+              }
+            }
+          },
+          {
+            "id": 178,
+            "type": "SegmDetectorSEGS",
+            "pos": [
+              233.76104524494968,
+              -349.0023930901515
+            ],
+            "size": [
+              400,
+              224
+            ],
+            "flags": {},
+            "order": 0,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "segm_detector",
+                "name": "segm_detector",
+                "type": "SEGM_DETECTOR",
+                "link": 375
+              },
+              {
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE",
+                "link": 377
+              },
+              {
+                "localized_name": "detailer_hook",
+                "name": "detailer_hook",
+                "shape": 7,
+                "type": "DETAILER_HOOK",
+                "link": null
+              },
+              {
+                "localized_name": "threshold",
+                "name": "threshold",
+                "type": "FLOAT",
+                "widget": {
+                  "name": "threshold"
+                },
+                "link": 383
+              },
+              {
+                "localized_name": "dilation",
+                "name": "dilation",
+                "type": "INT",
+                "widget": {
+                  "name": "dilation"
+                },
+                "link": 384
+              },
+              {
+                "localized_name": "crop_factor",
+                "name": "crop_factor",
+                "type": "FLOAT",
+                "widget": {
+                  "name": "crop_factor"
+                },
+                "link": 385
+              },
+              {
+                "localized_name": "drop_size",
+                "name": "drop_size",
+                "type": "INT",
+                "widget": {
+                  "name": "drop_size"
+                },
+                "link": 386
+              },
+              {
+                "localized_name": "labels",
+                "name": "labels",
+                "type": "STRING",
+                "widget": {
+                  "name": "labels"
+                },
+                "link": 387
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "SEGS",
+                "name": "SEGS",
+                "type": "SEGS",
+                "links": [
+                  376
+                ]
+              }
+            ],
+            "properties": {
+              "Node name for S&R": "SegmDetectorSEGS",
+              "ue_properties": {
+                "widget_ue_connectable": {},
+                "input_ue_unconnectable": {},
+                "version": "7.8"
+              }
+            },
+            "widgets_values": [
+              0.5,
+              10,
+              3,
+              10,
+              "all"
+            ],
+            "widgets_values_named": {
+              "threshold": 0.5,
+              "dilation": 10,
+              "crop_factor": 3,
+              "drop_size": 10,
+              "labels": "all"
+            }
+          },
+          {
+            "id": 179,
+            "type": "UltralyticsDetectorProvider",
+            "pos": [
+              239.6216520578773,
+              -495.1606630052882
+            ],
+            "size": [
+              451.8332447575027,
+              79.87276896324067
+            ],
+            "flags": {},
+            "order": 1,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "model_name",
+                "name": "model_name",
+                "type": "COMBO",
+                "widget": {
+                  "name": "model_name"
+                },
+                "link": 389
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "BBOX_DETECTOR",
+                "name": "BBOX_DETECTOR",
+                "type": "BBOX_DETECTOR",
+                "links": null
+              },
+              {
+                "localized_name": "SEGM_DETECTOR",
+                "name": "SEGM_DETECTOR",
+                "type": "SEGM_DETECTOR",
+                "links": [
+                  375
+                ]
+              }
+            ],
+            "properties": {
+              "Node name for S&R": "UltralyticsDetectorProvider",
+              "ue_properties": {
+                "widget_ue_connectable": {},
+                "input_ue_unconnectable": {},
+                "version": "7.8"
+              }
+            },
+            "widgets_values": [
+              "segm/ntd11_anime_nsfw_segm_v5-variant1.pt"
+            ],
+            "widgets_values_named": {
+              "model_name": "segm/ntd11_anime_nsfw_segm_v5-variant1.pt"
+            }
+          }
+        ],
+        "groups": [],
+        "links": [
+          {
+            "id": 375,
+            "origin_id": 179,
+            "origin_slot": 1,
+            "target_id": 178,
+            "target_slot": 0,
+            "type": "SEGM_DETECTOR"
+          },
+          {
+            "id": 376,
+            "origin_id": 178,
+            "origin_slot": 0,
+            "target_id": 180,
+            "target_slot": 0,
+            "type": "SEGS"
+          },
+          {
+            "id": 377,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 178,
+            "target_slot": 1,
+            "type": "IMAGE"
+          },
+          {
+            "id": 379,
+            "origin_id": 180,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 0,
+            "type": "MASK"
+          },
+          {
+            "id": 383,
+            "origin_id": -10,
+            "origin_slot": 1,
+            "target_id": 178,
+            "target_slot": 3,
+            "type": "FLOAT"
+          },
+          {
+            "id": 384,
+            "origin_id": -10,
+            "origin_slot": 2,
+            "target_id": 178,
+            "target_slot": 4,
+            "type": "INT"
+          },
+          {
+            "id": 385,
+            "origin_id": -10,
+            "origin_slot": 3,
+            "target_id": 178,
+            "target_slot": 5,
+            "type": "FLOAT"
+          },
+          {
+            "id": 386,
+            "origin_id": -10,
+            "origin_slot": 4,
+            "target_id": 178,
+            "target_slot": 6,
+            "type": "INT"
+          },
+          {
+            "id": 387,
+            "origin_id": -10,
+            "origin_slot": 5,
+            "target_id": 178,
+            "target_slot": 7,
+            "type": "STRING"
+          },
+          {
+            "id": 389,
+            "origin_id": -10,
+            "origin_slot": 6,
+            "target_id": 179,
+            "target_slot": 0,
+            "type": "COMBO"
+          }
+        ],
+        "extra": {
+          "ue_links": [],
+          "links_added_by_ue": []
+        }
+      }
+    ]
+  },
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 1.2650857990972368,
+      "offset": [
+        71.03836892894944,
+        795.0133005924971
+      ]
+    },
+    "frontendVersion": "1.49.6",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

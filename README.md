@@ -10,6 +10,12 @@ Scatter stamp / sticker shapes over a mask instead of mosaic. Built-in white (or
 
 ## Highlights
 
+### Result instead of mosaic
+
+Hearts, scribble bars, stars, crosses, or your own sticker — same mask pipeline, no pixelation.
+
+<img src="docs/images/result.png" alt="Before / after" width="720">
+
 ### Stamp Load + color tint
 
 Pick a built-in shape, tint it with the color picker, and set a base angle. The node preview rotates with the angle; the `STAMP` output stays unrotated so Stamp Censor can apply auto-rotate / jitter on top.
@@ -35,30 +41,34 @@ Add or delete a file, then press **R** (Refresh Node Definitions) or reload the 
 
 ### Mask scatter with coverage / spacing
 
-Connect `image` + `mask` + `stamp`. Each connected mask region gets its own long-axis heading (optional), random sizes, and oriented-box packing until **target coverage**. Stamps may overflow the mask. An in-node demo preview updates when the stamp is connected.
+Connect `image` + `mask` + `stamp`. Each connected mask region gets its own long-axis heading (optional), random sizes, and oriented-box packing until **target coverage**. Tiny islands (SAM speckles) are skipped automatically. Stamps may overflow the mask. An in-node demo preview updates when the stamp is connected.
 
 <img src="docs/images/stamp_censor.png" alt="Stamp Censor" width="720">
 
-### Result instead of mosaic
+### Auto rotate
 
-Hearts, scribble bars, stars, crosses, or your own sticker — same mask pipeline, no pixelation.
+On: each mask region uses its long-axis heading, then adds the Stamp Load / Custom Load angle. Off: only that load angle is used. Stamps default to pointing up. Angle jitter is applied after this.
 
-<img src="docs/images/result.png" alt="Before / after" width="720">
+<img src="docs/images/stamp_autorotate.png" alt="Auto rotate" width="720">
 
 ## Install
-
-### ComfyUI-Manager (recommended)
-
-Search for **4A Stamp Censor** / `ComfyUI-4A-StampCensor` and install.
-
-### Manual
 
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/tsukino4a/ComfyUI-4A-StampCensor.git ComfyUI-4A-StampCensor
 ```
 
-No extra pip packages. Restart ComfyUI after install. After changing Python or locale files, restart again; after JS-only edits, hard-refresh the browser (Ctrl+F5).
+Or search **4A Stamp Censor** in ComfyUI-Manager. Restart ComfyUI after install.
+
+Examples in [`example_workflows/`](example_workflows/). Pick your own image in Load Image before running. Seed is randomized each queue.
+
+SAM3 · [`01_SAM3_StampCensor.json`](example_workflows/01_SAM3_StampCensor.json)
+
+<img src="docs/images/sam3_workflow.png" alt="SAM3 example workflow" width="480">
+
+Impact Pack YOLO NSFW · [`02_ImpactPack_NSFW_StampCensor.json`](example_workflows/02_ImpactPack_NSFW_StampCensor.json)
+
+<img src="docs/images/yolo_workflow.png" alt="YOLO NSFW example workflow" width="480">
 
 ## Quick start
 
