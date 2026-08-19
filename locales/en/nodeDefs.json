@@ -1,0 +1,110 @@
+{
+  "StampLoad4A": {
+    "display_name": "Stamp Load",
+    "description": "Pick a built-in stamp and tint color.",
+    "inputs": {
+      "stamp_preset": {
+        "name": "Stamp",
+        "tooltip": "Built-in stamp shape."
+      },
+      "stamp_color": {
+        "name": "Color",
+        "tooltip": "Tint color for built-in stamps (white+transparent or black ink on white)."
+      },
+      "stamp_angle": {
+        "name": "Angle",
+        "tooltip": "Initial angle used by Stamp Censor when Auto Rotate is off. The preview rotates; the output stamp does not."
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "Stamp",
+        "tooltip": "Prepared stamp for Stamp Censor."
+      }
+    }
+  },
+  "StampCustomLoad4A": {
+    "display_name": "Stamp Custom Load",
+    "description": "Drop or pick a custom stamp. No tinting. Black-on-white drawings are keyed.",
+    "inputs": {
+      "image": {
+        "name": "Custom Image",
+        "tooltip": "Drag a PNG onto the node. White+transparent is kept; black ink on white is keyed; colored RGBA is used as-is."
+      },
+      "stamp_angle": {
+        "name": "Angle",
+        "tooltip": "Initial angle used by Stamp Censor when Auto Rotate is off. The preview rotates; the output stamp does not."
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "Stamp",
+        "tooltip": "Prepared stamp for Stamp Censor."
+      }
+    }
+  },
+  "StampCensor4A": {
+    "display_name": "Stamp Censor",
+    "description": "Scatter stamps over masked regions. Connect Stamp from Stamp Load or Stamp Custom Load.",
+    "inputs": {
+      "image": {
+        "name": "Image",
+        "tooltip": "Source image to stamp over."
+      },
+      "mask": {
+        "name": "Mask",
+        "tooltip": "White areas are stamped. Each connected region is handled separately."
+      },
+      "stamp": {
+        "name": "Stamp",
+        "tooltip": "Connect Stamp Load or Stamp Custom Load."
+      },
+      "target_coverage": {
+        "name": "Coverage",
+        "tooltip": "Stop placing stamps in a region when this fraction of its mask is covered."
+      },
+      "size_ratio": {
+        "name": "Size Ratio",
+        "tooltip": "Stamp size as a fraction of the region's longer side, before min/max clamp."
+      },
+      "min_size": {
+        "name": "Min Size",
+        "tooltip": "Smallest stamp size in pixels."
+      },
+      "max_size": {
+        "name": "Max Size",
+        "tooltip": "Largest stamp size in pixels. Size Ratio usually hits first."
+      },
+      "spacing_factor": {
+        "name": "Spacing",
+        "tooltip": "Collision size of each stamp. 0 allows full overlap, useful for hollow shapes like a cross. 1.0 = oriented boxes just touch."
+      },
+      "size_jitter": {
+        "name": "Size Jitter",
+        "tooltip": "Random size variation around the base size."
+      },
+      "angle_jitter": {
+        "name": "Angle Jitter",
+        "tooltip": "Extra random rotation in degrees, added after auto-rotate or the load angle."
+      },
+      "auto_rotate": {
+        "name": "Auto Rotate",
+        "tooltip": "On: align to each mask region's long axis, then add the Stamp Load angle. Off: use the Stamp Load angle only."
+      },
+      "stamp_angle": {
+        "name": "Angle",
+        "tooltip": "Copied from Stamp Load. Added on top of auto-rotate when it is on."
+      },
+      "seed": {
+        "name": "Seed",
+        "tooltip": "Optional. When connected, used for placement. When empty, each queue run is random."
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "Image",
+        "tooltip": "Image after stamps are applied."
+      }
+    }
+  }
+}

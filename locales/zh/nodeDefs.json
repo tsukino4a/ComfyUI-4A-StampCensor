@@ -1,0 +1,110 @@
+{
+  "StampLoad4A": {
+    "display_name": "贴纸加载",
+    "description": "选择内置贴纸并调色。",
+    "inputs": {
+      "stamp_preset": {
+        "name": "贴纸",
+        "tooltip": "内置贴纸形状。"
+      },
+      "stamp_color": {
+        "name": "颜色",
+        "tooltip": "给内置贴纸上色。资源可以是纯白透明底，或白底纯黑线稿。"
+      },
+      "stamp_angle": {
+        "name": "角度",
+        "tooltip": "贴纸打码关闭自动旋转时使用的初始角度。预览会转，输出贴纸本身不转。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "贴纸",
+        "tooltip": "送给贴纸打码节点的贴纸。"
+      }
+    }
+  },
+  "StampCustomLoad4A": {
+    "display_name": "自定义贴纸加载",
+    "description": "拖入或选择自定义贴纸图。不上色。白底黑稿会抽黑点丢掉白底。",
+    "inputs": {
+      "image": {
+        "name": "自定义图",
+        "tooltip": "把 PNG 拖到节点上。纯白透明底原样用；白底纯黑线稿会抽黑色、无视白色；彩色透明图直接读通道。"
+      },
+      "stamp_angle": {
+        "name": "角度",
+        "tooltip": "贴纸打码关闭自动旋转时使用的初始角度。预览会转，输出贴纸本身不转。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "贴纸",
+        "tooltip": "送给贴纸打码节点的贴纸。"
+      }
+    }
+  },
+  "StampCensor4A": {
+    "display_name": "贴纸打码",
+    "description": "在遮罩区域上随机铺贴纸。贴纸口请连接贴纸加载或自定义贴纸加载。",
+    "inputs": {
+      "image": {
+        "name": "图像",
+        "tooltip": "要打码的原图。"
+      },
+      "mask": {
+        "name": "遮罩",
+        "tooltip": "白色区域会被打码。每个连通区域单独计算朝向和布点。"
+      },
+      "stamp": {
+        "name": "贴纸",
+        "tooltip": "连接贴纸加载或自定义贴纸加载。"
+      },
+      "target_coverage": {
+        "name": "覆盖率",
+        "tooltip": "该区域内已覆盖到这个比例后停止继续放贴纸。"
+      },
+      "size_ratio": {
+        "name": "尺寸比例",
+        "tooltip": "贴纸基准尺寸 = 该区域长边 × 此比例，再限制在最小/最大尺寸之间。"
+      },
+      "min_size": {
+        "name": "最小尺寸",
+        "tooltip": "贴纸最短边下限，单位像素。"
+      },
+      "max_size": {
+        "name": "最大尺寸",
+        "tooltip": "贴纸最长边上限，单位像素。一般会被尺寸比例先限制住。"
+      },
+      "spacing_factor": {
+        "name": "间距",
+        "tooltip": "贴纸碰撞尺寸。0 允许完全重叠，方便十字等镂空图案铺满。1.0 为旋转矩形刚好相贴。"
+      },
+      "size_jitter": {
+        "name": "尺寸抖动",
+        "tooltip": "在基准尺寸附近随机缩放。"
+      },
+      "angle_jitter": {
+        "name": "角度抖动",
+        "tooltip": "在自动旋转或加载角度之上，再叠加的随机偏转，单位度。"
+      },
+      "auto_rotate": {
+        "name": "自动旋转",
+        "tooltip": "开：先对齐遮罩长边，再叠加上贴纸加载的角度。关：只用贴纸加载的角度。"
+      },
+      "stamp_angle": {
+        "name": "角度",
+        "tooltip": "从贴纸加载同步。自动旋转开启时叠在长边朝向上；关闭时单独使用。"
+      },
+      "seed": {
+        "name": "种子",
+        "tooltip": "可选。接入后按该种子布点；不接则每次排队随机。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "图像",
+        "tooltip": "打码后的图像。"
+      }
+    }
+  }
+}

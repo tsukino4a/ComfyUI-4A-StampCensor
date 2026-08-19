@@ -1,0 +1,1 @@
+# ComfyUI supplies Pillow and NumPy.

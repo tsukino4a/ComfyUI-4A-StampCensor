@@ -1,0 +1,24 @@
+[project]
+name = "4a-stamp-censor"
+version = "0.1.0"
+description = "Scatter stamp/sticker shapes over a mask instead of mosaic. Built-in white or black-on-white presets can be tinted; custom PNGs keep their own alpha."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Tsukino4A" },
+]
+dependencies = []
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Repository = "https://github.com/tsukino4a/ComfyUI-4A-StampCensor"
+Documentation = "https://github.com/tsukino4a/ComfyUI-4A-StampCensor#readme"
+"Bug Tracker" = "https://github.com/tsukino4a/ComfyUI-4A-StampCensor/issues"
+
+[tool.comfy]
+PublisherId = "tsukino4a"
+DisplayName = "4A Stamp Censor"
