@@ -6,7 +6,7 @@
 
 **当前版本：1.0.0** — 贴纸加载、自定义贴纸加载、贴纸打码，节点内可预览。
 
-<img src="docs/images/hero.png" alt="总览" width="720">
+<img src="docs/images/hero-v2.png" alt="总览" width="720">
 
 ## 亮点
 
@@ -14,19 +14,19 @@
 
 爱心、涂鸦横条、星星、叉，或你自己的贴纸——同一条遮罩链路，不再像素化。
 
-<img src="docs/images/result.png" alt="效果对比" width="720">
+<img src="docs/images/result-v2.png" alt="效果对比" width="720">
 
 ### 贴纸加载 + 色盘上色
 
 选内置形状、用色盘染色、设初始角度。节点预览会跟着角度转；输出的 `STAMP` 本身不转，留给贴纸打码做自动旋转 / 抖动。
 
-<img src="docs/images/stamp_load.png" alt="贴纸加载" width="720">
+<img src="docs/images/stamp_load-v2.png" alt="贴纸加载" width="720">
 
 ### 自定义图片
 
 用 **自定义贴纸加载** 拖入或点选自己的贴图。完全按原图使用，不做抽底、不上色；白底会保留。
 
-<img src="docs/images/stamp_custom.png" alt="自定义图片" width="720">
+<img src="docs/images/stamp_custom-v2.png" alt="自定义图片" width="720">
 
 ### 自定义贴纸
 
@@ -37,13 +37,13 @@
 
 增删文件后按 **R**（刷新节点定义）或刷新页面，文件名（不含扩展名）就是下拉里的 id。
 
-<img src="docs/images/stamp_assets.png" alt="自定义贴纸" width="720">
+<img src="docs/images/stamp_assets-v2.png" alt="自定义贴纸" width="720">
 
 ### 按覆盖率 / 间距铺满遮罩
 
 接 `image` + `mask` + `stamp`。每个连通区域单独算长边朝向（可关）、随机尺寸和旋转矩形碰撞，直到达到**覆盖率**。过小的碎点（比如 SAM 噪点）会按整图比例自动丢掉。贴纸可以溢出遮罩。接好贴纸后，节点底部会更新演示预览。
 
-<img src="docs/images/stamp_censor.png" alt="贴纸打码" width="720">
+<img src="docs/images/stamp_censor-v2.png" alt="贴纸打码" width="720">
 
 ### 自动旋转
 
