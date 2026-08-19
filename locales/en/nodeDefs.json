@@ -25,11 +25,11 @@
   },
   "StampCustomLoad4A": {
     "display_name": "Stamp Custom Load",
-    "description": "Drop or pick a custom stamp. No tinting. Black-on-white drawings are keyed.",
+    "description": "Drop or pick a custom image. Used as-is, no keying or tint.",
     "inputs": {
       "image": {
         "name": "Custom Image",
-        "tooltip": "Drag a PNG onto the node. White+transparent is kept; black ink on white is keyed; colored RGBA is used as-is."
+        "tooltip": "Drag an image onto the node. The file is used as-is; no white-background keying or tint."
       },
       "stamp_angle": {
         "name": "Angle",

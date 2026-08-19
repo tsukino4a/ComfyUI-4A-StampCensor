@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from ..stamp_engine import comfy_image_mtime, normalize_stamp_rgba, open_comfy_image, parse_comfy_image_ref
+from ..stamp_engine import as_is_stamp_rgba, comfy_image_mtime, open_comfy_image, parse_comfy_image_ref
 from .common import rgba_to_stamp_tensor, slider_float
 
 
@@ -33,7 +33,7 @@ def _input_image_files() -> list[str]:
 class StampCustomLoad4A:
     NAME = "StampCustomLoad4A"
     CATEGORY = "4A/StampCensor"
-    DESCRIPTION = "Drop or pick a custom stamp. White+transparent or black-on-white drawings are normalized. No tinting."
+    DESCRIPTION = "Drop or pick a custom image. Used as-is, no keying or tint."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -43,7 +43,7 @@ class StampCustomLoad4A:
                     _input_image_files(),
                     {
                         "image_upload": True,
-                        "tooltip": "Drag a PNG onto the node. White+transparent is kept; black ink on white is keyed. Colored RGBA is used as-is.",
+                        "tooltip": "Drag an image onto the node. The file is used as-is; no white-background keying or tint.",
                     },
                 ),
                 "stamp_angle": slider_float(
@@ -70,5 +70,5 @@ class StampCustomLoad4A:
         filename, subfolder, type_name = parse_comfy_image_ref(image)
         if not filename:
             raise ValueError("Select or drop a custom stamp image.")
-        stamp_pil = normalize_stamp_rgba(open_comfy_image(filename, subfolder, type_name))
+        stamp_pil = as_is_stamp_rgba(open_comfy_image(filename, subfolder, type_name))
         return (rgba_to_stamp_tensor(stamp_pil),)

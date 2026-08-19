@@ -6,7 +6,7 @@ Scatter stamp / sticker shapes over a mask instead of mosaic. Built-in white (or
 
 **Current release: 1.0.0** — Stamp Load, Stamp Custom Load, and Stamp Censor with live node previews.
 
-![Hero overview](docs/images/hero.png)
+<img src="docs/images/hero.png" alt="Hero overview" width="720">
 
 ## Highlights
 
@@ -14,30 +14,36 @@ Scatter stamp / sticker shapes over a mask instead of mosaic. Built-in white (or
 
 Pick a built-in shape, tint it with the color picker, and set a base angle. The node preview rotates with the angle; the `STAMP` output stays unrotated so Stamp Censor can apply auto-rotate / jitter on top.
 
-![Stamp Load](docs/images/stamp_load.png)
+<img src="docs/images/stamp_load.png" alt="Stamp Load" width="720">
 
-### Custom drawings (no tint)
+### Custom image
 
-Drop or pick your own PNG. Two drawing styles are normalized automatically:
+Use **Stamp Custom Load** to drop or pick your own texture. The file is used as-is — no keying, no tint. White backgrounds stay white.
 
-- **White shape + transparent background** — used as-is
-- **Black ink on white paper** — black pixels become the stamp, white is discarded
+<img src="docs/images/stamp_custom.png" alt="Custom image" width="720">
 
-Colored RGBA stickers pass through without tinting.
+### Custom stamps
 
-![Stamp Custom Load](docs/images/stamp_custom.png)
+Colorable templates go in the [`assets/`](assets/) folder (do not name a file `demo_scene.png`). **Stamp Load** scans that folder and only accepts two tintable formats:
+
+- **White on a transparent background**
+- **Black ink on white** (black is kept, white is discarded)
+
+Add or delete a file, then press **R** (Refresh Node Definitions) or reload the page. The filename (without extension) is the preset id in the dropdown.
+
+<img src="docs/images/stamp_assets.png" alt="Custom stamps" width="720">
 
 ### Mask scatter with coverage / spacing
 
 Connect `image` + `mask` + `stamp`. Each connected mask region gets its own long-axis heading (optional), random sizes, and oriented-box packing until **target coverage**. Stamps may overflow the mask. An in-node demo preview updates when the stamp is connected.
 
-![Stamp Censor](docs/images/stamp_censor.png)
+<img src="docs/images/stamp_censor.png" alt="Stamp Censor" width="720">
 
 ### Result instead of mosaic
 
 Hearts, scribble bars, stars, crosses, or your own sticker — same mask pipeline, no pixelation.
 
-![Before / after](docs/images/result.png)
+<img src="docs/images/result.png" alt="Before / after" width="720">
 
 ## Install
 
@@ -78,14 +84,7 @@ This plugin does **not** detect NSFW or grow masks. Wire those nodes yourself.
 | [`assets/`](assets/) | Built-in presets. Every `.png` except `demo_scene.png` is scanned on startup |
 | [`assets/demo_scene.png`](assets/demo_scene.png) | Internal demo plate only — never listed as a stamp |
 
-Accepted preset drawings:
-
-- Pure white RGB + real transparency
-- Pure black ink on a white background (converted at load)
-
-Add or delete a file, then press **R** (Refresh Node Definitions) or reload the page. Name the file the preset id you want in the dropdown.
-
-Shipped shapes (order is fixed; extra files sort after them): `heart_standard`, `heart_wobbly_a`, `heart_soft`, `bar_h_scribble`, `bar_h_thick`, `star_wobbly`, `circle_scribble`, `cross_x`.
+Format rules and refresh steps are under **Custom stamps** above. Shipped shapes (order is fixed; extra files sort after them): `heart_standard`, `heart_wobbly_a`, `heart_soft`, `bar_h_scribble`, `bar_h_thick`, `star_wobbly`, `circle_scribble`, `cross_x`.
 
 ## Dependencies
 

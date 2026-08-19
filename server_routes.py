@@ -43,19 +43,16 @@ def register_routes():
         try:
             from PIL import Image
 
-            from .stamp_engine import crop_opaque, harden_alpha, normalize_stamp_rgba, open_comfy_image
+            from .stamp_engine import as_is_stamp_rgba, crop_opaque, harden_alpha, open_comfy_image
 
             custom_name = request.rel_url.query.get("custom_filename")
             if custom_name:
-                stamp = crop_opaque(
-                    normalize_stamp_rgba(
-                        open_comfy_image(
-                            custom_name,
-                            request.rel_url.query.get("custom_subfolder") or "",
-                            request.rel_url.query.get("custom_type") or "input",
-                        )
-                    ),
-                    pad_ratio=0,
+                stamp = as_is_stamp_rgba(
+                    open_comfy_image(
+                        custom_name,
+                        request.rel_url.query.get("custom_subfolder") or "",
+                        request.rel_url.query.get("custom_type") or "input",
+                    )
                 )
             else:
                 stamp = prepare_stamp(preset, color)
@@ -69,7 +66,7 @@ def register_routes():
 
     @routes.post("/4a_stampcensor/demo_preview")
     async def demo_preview(request):
-        from .stamp_engine import normalize_stamp_rgba, open_comfy_image, prepare_stamp, render_demo_preview
+        from .stamp_engine import as_is_stamp_rgba, normalize_stamp_rgba, open_comfy_image, prepare_stamp, render_demo_preview
         from PIL import Image
         import base64
 
@@ -85,7 +82,7 @@ def register_routes():
         try:
             custom_name = data.get("custom_filename")
             if custom_name:
-                stamp = normalize_stamp_rgba(
+                stamp = as_is_stamp_rgba(
                     open_comfy_image(
                         custom_name,
                         data.get("custom_subfolder") or "",

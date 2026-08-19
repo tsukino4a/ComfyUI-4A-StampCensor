@@ -91,11 +91,16 @@ def _to_white_alpha(kind: str, arr: np.ndarray) -> Image.Image:
 
 
 def normalize_stamp_rgba(im: Image.Image) -> Image.Image:
-    """Turn allowed drawings into white RGB + alpha. Other RGBA images pass through."""
+    """Turn folder presets into white RGB + alpha. Other RGBA images pass through."""
     kind, arr = _inspect_stamp(im)
     if kind not in _STAMP_KINDS:
         return im.convert("RGBA")
     return _to_white_alpha(kind, arr)
+
+
+def as_is_stamp_rgba(im: Image.Image) -> Image.Image:
+    """Custom Load: keep the dropped image unchanged, including white backgrounds."""
+    return im.convert("RGBA")
 
 
 def _is_allowed_builtin_stamp(path: str) -> bool:

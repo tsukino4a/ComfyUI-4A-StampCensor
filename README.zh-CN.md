@@ -6,7 +6,7 @@
 
 **当前版本：1.0.0** — 贴纸加载、自定义贴纸加载、贴纸打码，节点内可预览。
 
-![总览](docs/images/hero.png)
+<img src="docs/images/hero.png" alt="总览" width="720">
 
 ## 亮点
 
@@ -14,30 +14,36 @@
 
 选内置形状、用色盘染色、设初始角度。节点预览会跟着角度转；输出的 `STAMP` 本身不转，留给贴纸打码做自动旋转 / 抖动。
 
-![贴纸加载](docs/images/stamp_load.png)
+<img src="docs/images/stamp_load.png" alt="贴纸加载" width="720">
 
-### 自定义线稿（不上色）
+### 自定义图片
 
-拖入或点选自己的 PNG。两种画法会自动收成贴纸：
+用 **自定义贴纸加载** 拖入或点选自己的贴图。完全按原图使用，不做抽底、不上色；白底会保留。
 
-- **纯白形状 + 透明底** — 原样使用
-- **白底纯黑线稿** — 只读黑色、丢掉白色
+<img src="docs/images/stamp_custom.png" alt="自定义图片" width="720">
 
-已有颜色的透明贴纸会直接读通道，不上色。
+### 自定义贴纸
 
-![自定义贴纸加载](docs/images/stamp_custom.png)
+可以变色的模板请自己放到 [`assets/`](assets/) 文件夹（不要用 `demo_scene.png` 这个文件名）。**贴纸加载** 会扫描这个目录，只认两种可上色格式：
+
+- **透明底白色**
+- **白底黑色**（加载时抽黑、丢掉白色）
+
+增删文件后按 **R**（刷新节点定义）或刷新页面，文件名（不含扩展名）就是下拉里的 id。
+
+<img src="docs/images/stamp_assets.png" alt="自定义贴纸" width="720">
 
 ### 按覆盖率 / 间距铺满遮罩
 
 接 `image` + `mask` + `stamp`。每个连通区域单独算长边朝向（可关）、随机尺寸和旋转矩形碰撞，直到达到**覆盖率**。贴纸可以溢出遮罩。接好贴纸后，节点底部会更新演示预览。
 
-![贴纸打码](docs/images/stamp_censor.png)
+<img src="docs/images/stamp_censor.png" alt="贴纸打码" width="720">
 
 ### 用图案代替马赛克
 
 爱心、涂鸦横条、星星、叉，或你自己的贴纸——同一条遮罩链路，不再像素化。
 
-![效果对比](docs/images/result.png)
+<img src="docs/images/result.png" alt="效果对比" width="720">
 
 ## 安装
 
@@ -78,14 +84,7 @@ git clone https://github.com/tsukino4a/ComfyUI-4A-StampCensor.git ComfyUI-4A-Sta
 | [`assets/`](assets/) | 内置预设。启动时扫描全部 `.png`，**不包括** `demo_scene.png` |
 | [`assets/demo_scene.png`](assets/demo_scene.png) | 内部演示底图，不会出现在贴纸列表里 |
 
-可被扫进预设的画法：
-
-- 纯白 RGB + 真透明底
-- 白底纯黑线稿（加载时自动转换）
-
-增删文件后按 **R**（刷新节点定义）或刷新页面，就会出现在贴纸加载下拉里。文件名（不含扩展名）就是下拉里的 id。
-
-随包装的形状（顺序固定，多出来的文件排在后面）：`heart_standard`、`heart_wobbly_a`、`heart_soft`、`bar_h_scribble`、`bar_h_thick`、`star_wobbly`、`circle_scribble`、`cross_x`。
+格式要求和刷新方式见上面的 **自定义贴纸**。随包装的形状（顺序固定，多出来的文件排在后面）：`heart_standard`、`heart_wobbly_a`、`heart_soft`、`bar_h_scribble`、`bar_h_thick`、`star_wobbly`、`circle_scribble`、`cross_x`。
 
 ## 依赖
 

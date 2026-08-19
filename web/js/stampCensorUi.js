@@ -560,7 +560,7 @@ function ensureSliderStyles() {
     let style = document.getElementById("sc-stamp-slider-css");
     const css = `
 .sc-sl{display:flex !important;flex-direction:row !important;align-items:center !important;gap:4px;width:100%;height:20px;box-sizing:border-box;padding:0 15px;user-select:none}
-.sc-sl-lab{flex:0 0 52px;width:52px;font:12px/20px sans-serif;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-sl-lab{flex:0 0 auto;width:auto;font:12px/20px sans-serif;color:#d4d4d4;overflow:hidden;white-space:nowrap}
 .sc-sl-track{position:relative;flex:1 1 auto;min-width:24px;height:12px;cursor:pointer}
 .sc-sl-rail{position:absolute;left:0;right:0;top:4.5px;height:3px;border-radius:1px;background:rgba(255,255,255,.12)}
 .sc-sl-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:1px;background:#6b8fd6}
@@ -587,6 +587,62 @@ function formatSliderValue(value, decimals) {
     const n = Number(value);
     if (!Number.isFinite(n)) return (0).toFixed(decimals);
     return n.toFixed(decimals);
+}
+
+const SLIDER_LABEL_FONT = "12px sans-serif";
+const SLIDER_LABEL_MAX = 108;
+
+function measureSliderLabelWidth(text) {
+    const ctx =
+        measureSliderLabelWidth.ctx ||
+        (measureSliderLabelWidth.ctx = document.createElement("canvas").getContext("2d"));
+    ctx.font = SLIDER_LABEL_FONT;
+    return Math.ceil(ctx.measureText(text || "").width);
+}
+
+function isCensorNode(node) {
+    return node?.comfyClass === "StampCensor4A" || node?.type === "StampCensor4A";
+}
+
+function collectSliderLabs(node) {
+    const labs = [];
+    for (const w of node.widgets || []) {
+        if (!w?._4aSliderLab) continue;
+        if (isCensorNode(node) && w.name === "stamp_angle") continue;
+        labs.push(w._4aSliderLab);
+    }
+    node._4aSliderLabs = labs;
+    return labs;
+}
+
+function syncNodeSliderLabels(node) {
+    const labs = collectSliderLabs(node);
+    if (!labs.length) return;
+    let maxW = 0;
+    for (const lab of labs) {
+        maxW = Math.max(maxW, measureSliderLabelWidth(lab.textContent || ""));
+    }
+    const width = Math.min(SLIDER_LABEL_MAX, Math.max(0, maxW + 1));
+    node._4aSliderLabelW = width;
+    const flex = `0 0 ${width}px`;
+    for (const lab of labs) {
+        lab.style.flex = flex;
+        lab.style.width = `${width}px`;
+        lab.style.maxWidth = `${width}px`;
+    }
+}
+
+function syncSliderLabelTexts(node) {
+    for (const w of node.widgets || []) {
+        const lab = w._4aSliderLab;
+        if (!lab) continue;
+        const text = w.label || w.name || "";
+        if (lab.textContent !== text) {
+            lab.textContent = text;
+            lab.title = text;
+        }
+    }
+    syncNodeSliderLabels(node);
 }
 
 function hideWidgetSlot(widget) {
@@ -698,6 +754,7 @@ function enhanceCompactSlider(node, widget) {
     const paint = () => {
         lab.textContent = widget.label || widget.name || "";
         lab.title = lab.textContent;
+        syncNodeSliderLabels(node);
         const v = liveValue();
         num.value = formatSliderValue(v, decimals);
         const pct = max === min ? 0 : ((v - min) / (max - min)) * 100;
@@ -763,6 +820,9 @@ function enhanceCompactSlider(node, widget) {
     rail.appendChild(fillEl);
     track.append(rail, thumb);
     row.append(lab, track, num);
+    widget._4aSliderLab = lab;
+    if (!node._4aSliderLabs) node._4aSliderLabs = [];
+    if (!node._4aSliderLabs.includes(lab)) node._4aSliderLabs.push(lab);
     paint();
 
     const prevCb = widget.callback;
@@ -790,14 +850,20 @@ function enhanceCompactSlider(node, widget) {
         widgets.splice(domIdx, 1);
         widgets.splice(srcIdx + 1, 0, dom);
     }
-    requestAnimationFrame(() => stripDomWidgetChrome(row));
+    requestAnimationFrame(() => {
+        stripDomWidgetChrome(row);
+        syncNodeSliderLabels(node);
+    });
     widget._4aPaintSlider = paint;
 }
 
 function enhanceNodeSliders(node) {
     for (const w of [...(node.widgets || [])]) {
-        if (SLIDER_FIELDS.has(w.name)) enhanceCompactSlider(node, w);
+        if (!SLIDER_FIELDS.has(w.name)) continue;
+        if (isCensorNode(node) && w.name === "stamp_angle") continue;
+        enhanceCompactSlider(node, w);
     }
+    syncNodeSliderLabels(node);
 }
 
 function isChromeWidget(w) {
@@ -852,6 +918,7 @@ function stripBrokenPreviewWidgets(node) {
 }
 
 const PREVIEW_MIN = { square: 160, wide: 80 };
+const PREVIEW_PAD = 4;
 const COMBO_ROW_H = 24;
 
 function isOfficialImageRow(widget) {
@@ -902,15 +969,31 @@ function stampSpinFit(img) {
     return { iw, ih, side: Math.hypot(iw, ih) };
 }
 
+function dirtyPreviewCanvas(node) {
+    node.setDirtyCanvas?.(true, true);
+    app.graph?.setDirtyCanvas?.(true, true);
+    const canvas = app.canvas;
+    canvas?.setDirty?.(true, true);
+    requestAnimationFrame(() => {
+        node.setDirtyCanvas?.(true, true);
+        canvas?.setDirty?.(true, true);
+        canvas?.draw?.(true, true);
+    });
+}
+
 function applyPreviewMinSize(node) {
-    if (isStampLoadNode(node)) return;
     if (node._4aResizing) return;
     node._4aResizing = true;
     try {
-        const next = node.computeSize();
+        const minH = PREVIEW_MIN[node._4aPreviewKind] || PREVIEW_MIN.square;
+        const pad = isStampLoadNode(node) ? 0 : PREVIEW_PAD;
+        const fromWidgets = widgetsBottom(node) + pad + minH + pad;
+        const computed = node.computeSize();
+        const fromCompute = Array.isArray(computed) && Number.isFinite(computed[1]) ? computed[1] : 0;
+        const need = Math.max(fromCompute, fromWidgets);
         const cur = node.size?.[1] || 0;
-        if (!Array.isArray(next) || !Number.isFinite(next[1])) return;
-        if (cur < next[1]) node.setSize([node.size[0], next[1]]);
+        const width = node.size?.[0] || 240;
+        if (cur < need) node.setSize([width, need]);
     } finally {
         node._4aResizing = false;
     }
@@ -969,15 +1052,24 @@ function attachCanvasPreview(node, kind) {
     const prevDraw = node.onDrawForeground;
     node.onDrawForeground = function (ctx) {
         prevDraw?.apply(this, arguments);
+        syncSliderLabelTexts(this);
         const img = this._4aPreview?.img;
         if (!img) return;
         this.imgs = null;
         this.imageIndex = null;
         const load = isStampLoadNode(this);
-        const y = widgetsBottom(this) + (load ? 0 : 4);
+        const pad = load ? 0 : PREVIEW_PAD;
+        const y = widgetsBottom(this) + pad;
         const boxW = Math.max(0, this.size[0]);
-        const boxH = Math.max(0, this.size[1] - y);
-        if (boxW < 8 || boxH < 8) return;
+        const boxH = Math.max(0, this.size[1] - y - pad);
+        if (boxW < 8 || boxH < 8) {
+            if (!this._4aPreviewGrowOnce) {
+                this._4aPreviewGrowOnce = true;
+                applyPreviewMinSize(this);
+                dirtyPreviewCanvas(this);
+            }
+            return;
+        }
 
         const iw = img.naturalWidth || img.width || 1;
         const ih = img.naturalHeight || img.height || 1;
@@ -1026,6 +1118,7 @@ function attachCanvasPreview(node, kind) {
         const size = prevCompute?.apply(this, arguments) || [this.size?.[0] || 240, 80];
         if (shouldReservePreview(this)) {
             size[1] += PREVIEW_MIN[this._4aPreviewKind] || PREVIEW_MIN.wide;
+            if (!isStampLoadNode(this)) size[1] += PREVIEW_PAD;
         }
         return size;
     };
@@ -1058,7 +1151,8 @@ function setPreviewImage(node, imageEl, key) {
         applyPreviewMinSize(node);
     }
     if (imageEl) node._4aEmptySized = false;
-    node.setDirtyCanvas(true, true);
+    if (imageEl) applyPreviewMinSize(node);
+    dirtyPreviewCanvas(node);
 }
 
 function setPreviewPlaceholder(node, key, text) {
@@ -1121,6 +1215,21 @@ function hasImageTransfer(dataTransfer) {
         || types.includes("application/x-comfy-asset-info");
 }
 
+function refreshCustomLoadWhenReady(node, tries = 24) {
+    if (!isCustomStampLoadNode(node)) {
+        node._4aRefreshPreview?.(0);
+        return;
+    }
+    if (customStampKey(node)) {
+        node._4aRefreshPreview?.(0);
+        applyPreviewMinSize(node);
+        dirtyPreviewCanvas(node);
+        return;
+    }
+    if (tries <= 0) return;
+    setTimeout(() => refreshCustomLoadWhenReady(node, tries - 1), 50);
+}
+
 function attachImageDrop(node) {
     if (node._4aDropReady) return;
     node._4aDropReady = true;
@@ -1134,9 +1243,19 @@ function attachImageDrop(node) {
         const isImage = hasImageTransfer(event?.dataTransfer);
         if (!isImage) return prevDrop?.(event) ?? false;
         const result = prevDrop?.(event);
-        setTimeout(() => this._4aRefreshPreview?.(80), 80);
+        refreshCustomLoadWhenReady(this);
         return result ?? true;
     };
+    const imageW = node.widgets?.find((w) => w.name === "image");
+    if (imageW && !imageW._4aDropHooked) {
+        imageW._4aDropHooked = true;
+        const prevCb = imageW.callback;
+        imageW.callback = function (...args) {
+            const r = prevCb?.apply(this, args);
+            refreshCustomLoadWhenReady(node);
+            return r;
+        };
+    }
 }
 
 function stripLegacyCustomImageWidgets(node) {
@@ -1201,6 +1320,11 @@ function hideSyncedCensorAngle(node) {
     hideWidgetSlot(w);
     if (w) {
         w.options = { ...(w.options || {}), hideInPanel: true, hidden: true };
+    }
+    for (const sl of node.widgets || []) {
+        if (sl?.name === "4A_SLIDER_stamp_angle" || sl?.__4aFor === "stamp_angle") {
+            hideWidgetSlot(sl);
+        }
     }
 }
 
@@ -1489,10 +1613,12 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
         if (colorW) enhanceStampColorWidget(node, colorW);
         enhanceNodeSliders(node);
         attachCanvasPreview(node, "square");
+        applyPreviewMinSize(node);
         if (imageDrop) {
             attachImageDrop(node);
             shrinkCustomLoadIfBloated(node);
         }
+        requestAnimationFrame(() => applyPreviewMinSize(node));
         node._4aRefreshPreview?.();
         return;
     }
@@ -1505,9 +1631,11 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
     enhanceNodeSliders(node);
     attachCanvasPreview(node, "square");
     applyPreviewMinSize(node);
+    requestAnimationFrame(() => applyPreviewMinSize(node));
     if (imageDrop) {
         attachImageDrop(node);
         shrinkCustomLoadIfBloated(node);
+        requestAnimationFrame(() => applyPreviewMinSize(node));
     }
     hookWidgets(node, (n) => {
         syncLoadAngleToCensors(n);
@@ -1582,6 +1710,7 @@ function setupStampCensor(node) {
         ensureSeedInput(node);
         tidyCensorWidgets(node);
         enhanceNodeSliders(node);
+        hideSyncedCensorAngle(node);
         attachCanvasPreview(node, "square");
         hookWidgets(node, refreshCensorDemo);
         node._4aRefreshPreview?.();
@@ -1595,6 +1724,7 @@ function setupStampCensor(node) {
     ensureSeedInput(node);
     tidyCensorWidgets(node);
     enhanceNodeSliders(node);
+    hideSyncedCensorAngle(node);
     attachCanvasPreview(node, "square");
     applyPreviewMinSize(node);
     hookWidgets(node, refreshCensorDemo);
