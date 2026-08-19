@@ -4,7 +4,7 @@
 
 Scatter stamp / sticker shapes over a mask instead of mosaic. Built-in white (or black-on-white) presets can be tinted from a color picker; custom PNGs keep their own alpha. Detection and mask grow are left to SAM / Impact / Grow Mask.
 
-**Current release: 0.1.0** — Stamp Load, Stamp Custom Load, and Stamp Censor with live node previews.
+**Current release: 1.0.0** — Stamp Load, Stamp Custom Load, and Stamp Censor with live node previews.
 
 ![Hero overview](docs/images/hero.png)
 
