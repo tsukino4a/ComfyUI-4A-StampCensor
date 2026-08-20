@@ -4,7 +4,7 @@
 
 Scatter stamp / sticker shapes over a mask instead of mosaic. Built-in white (or black-on-white) presets can be tinted from a color picker; custom PNGs keep their own alpha. Detection and mask grow are left to SAM / Impact / Grow Mask.
 
-**Current release: 1.0.0** — Stamp Load, Stamp Custom Load, and Stamp Censor with live node previews.
+**Current release: 1.1.0** — Even Pack for regular layouts, plus live node previews.
 
 <img src="docs/images/hero-v2.png" alt="Hero overview" width="720">
 
@@ -44,6 +44,12 @@ Add or delete a file, then press **R** (Refresh Node Definitions) or reload the 
 Connect `image` + `mask` + `stamp`. Each connected mask region gets its own long-axis heading (optional), random sizes, and oriented-box packing until **target coverage**. Tiny islands (SAM speckles) are skipped automatically. Stamps may overflow the mask. An in-node demo preview updates when the stamp is connected.
 
 <img src="docs/images/stamp_censor-v2.png" alt="Stamp Censor" width="720">
+
+### Even Pack
+
+Turn on **Even Pack** for a regular layout instead of random samples. Slender mask regions are scanned along the long axis and sized to local width (`1.0` fills that span). Squat / near-square regions size to the short side and pack in two dimensions. Coverage, size ratio, spacing, jitter, auto-rotate, and seed still apply.
+
+<img src="docs/images/stamp_even_pack.png" alt="Even Pack (placeholder)" width="720">
 
 ### Auto rotate
 
@@ -94,7 +100,7 @@ This plugin does **not** detect NSFW or grow masks. Wire those nodes yourself.
 | [`assets/`](assets/) | Built-in presets. Every `.png` except `demo_scene.png` is scanned on startup |
 | [`assets/demo_scene.png`](assets/demo_scene.png) | Internal demo plate only — never listed as a stamp |
 
-Format rules and refresh steps are under **Custom stamps** above. Shipped shapes (order is fixed; extra files sort after them): `heart_standard`, `heart_wobbly_a`, `heart_soft`, `bar_h_scribble`, `bar_h_thick`, `star_wobbly`, `circle_scribble`, `cross_x`.
+Format rules and refresh steps are under **Custom stamps** above. Shipped shapes (order is fixed; extra files sort after them): `heart_solid`, `heart_standard`, `heart_wobbly_a`, `heart_soft`, `bar_h_scribble`, `bar_h_thick`, `star_wobbly`, `circle_scribble`, `cross_x`.
 
 ## Dependencies
 

@@ -554,8 +554,10 @@ const SLIDER_FIELDS = new Set([
     "angle_jitter",
 ]);
 const SLIDER_ROW_H = 20;
+const PREVIEW_DEBOUNCE_MS = 160;
 const COLOR_BAR_H = 22;
 const SEED_WIDGET_NAMES = new Set(["seed", "control_after_generate", "control_before_generate"]);
+const RETIRED_CENSOR_WIDGET_NAMES = new Set(["size_levels"]);
 
 function ensureSliderStyles() {
     let style = document.getElementById("sc-stamp-slider-css");
@@ -695,10 +697,6 @@ function sizeDomWidget(dom, node, height) {
     syncDomWidgetWidth(dom, node);
 }
 
-function hideNativeSliderWidget(widget) {
-    hideWidgetSlot(widget);
-}
-
 function stripDomWidgetChrome(el) {
     const host = el.parentElement;
     if (!host) return;
@@ -716,7 +714,7 @@ function enhanceCompactSlider(node, widget) {
     if (!widget || widget._4aSliderEnhanced) return;
     widget._4aSliderEnhanced = true;
     ensureSliderStyles();
-    hideNativeSliderWidget(widget);
+    hideWidgetSlot(widget);
     if (!Number.isFinite(Number(widget._4aValue))) {
         const raw = Number(widget.value);
         widget._4aValue = Number.isFinite(raw) ? raw : Number.isFinite(widget.options?.default) ? widget.options.default : 0;
@@ -884,7 +882,9 @@ function snapshotNodeParams(node) {
     const out = {};
     for (const w of node.widgets || []) {
         if (!w?.name || isChromeWidget(w)) continue;
-        out[w.name] = w._4aValue ?? w.value;
+        let v = w._4aValue ?? w.value;
+        if (typeof v === "number" && Number.isFinite(v)) v = Math.round(v * 10000) / 10000;
+        out[w.name] = v;
     }
     return out;
 }
@@ -910,8 +910,12 @@ function restoreNodeParams(node, snap) {
 function syncEnhancedFromWidgets(node) {
     for (const w of node.widgets || []) {
         if (!w._4aSliderEnhanced) continue;
-        const raw = Number(w.value);
-        if (Number.isFinite(raw)) w._4aValue = raw;
+        const fromUi = Number(w._4aValue);
+        const fromNative = Number(w.value);
+        const raw = Number.isFinite(fromUi) ? fromUi : fromNative;
+        if (!Number.isFinite(raw)) continue;
+        w._4aValue = raw;
+        w.value = raw;
         w._4aPaintSlider?.();
     }
     node._4aPaintColorBar?.();
@@ -923,23 +927,6 @@ function restoreAllRememberedParams() {
         if (!isStampPackNode(n)) continue;
         restoreNodeParams(n, n._4aSavedParams);
     }
-}
-
-function widgetValues(node) {
-    const out = {};
-    const owned = new Set();
-    for (const w of node.widgets || []) {
-        if (!w?.name || isChromeWidget(w)) continue;
-        const value = w._4aValue ?? w.value;
-        if (w._4aSliderEnhanced || w._4aColorEnhanced || w._4aValue != null) {
-            out[w.name] = value;
-            owned.add(w.name);
-            continue;
-        }
-        if (owned.has(w.name)) continue;
-        out[w.name] = value;
-    }
-    return out;
 }
 
 function readNumberFrom(values, name, fallback) {
@@ -1367,15 +1354,48 @@ function isStampLoadNode(n) {
 }
 
 function hideSyncedCensorAngle(node) {
-    const w = node.widgets?.find((x) => x.name === "stamp_angle");
-    hideWidgetSlot(w);
-    if (w) {
+    if (!isCensorNode(node)) return;
+    const hideOne = (w) => {
+        hideWidgetSlot(w);
+        if (!w) return;
         w.options = { ...(w.options || {}), hideInPanel: true, hidden: true };
-    }
+    };
+    hideOne(node.widgets?.find((x) => x.name === "stamp_angle"));
     for (const sl of node.widgets || []) {
         if (sl?.name === "4A_SLIDER_stamp_angle" || sl?.__4aFor === "stamp_angle") {
-            hideWidgetSlot(sl);
+            hideOne(sl);
         }
+    }
+}
+
+function isRetiredCensorWidget(w) {
+    if (!w?.name) return false;
+    if (RETIRED_CENSOR_WIDGET_NAMES.has(w.name)) return true;
+    if (w.__4aFor && RETIRED_CENSOR_WIDGET_NAMES.has(w.__4aFor)) return true;
+    if (String(w.name).startsWith("4A_SLIDER_") && RETIRED_CENSOR_WIDGET_NAMES.has(String(w.name).slice(10))) {
+        return true;
+    }
+    return false;
+}
+
+function stripRetiredCensorWidgets(node) {
+    if (!node.widgets) return;
+    const kept = [];
+    for (const w of node.widgets) {
+        if (isRetiredCensorWidget(w)) {
+            w.serialize = false;
+            hideWidgetSlot(w);
+            continue;
+        }
+        if (w.linkedWidgets?.length) {
+            w.linkedWidgets = w.linkedWidgets.filter((lw) => !isRetiredCensorWidget(lw));
+        }
+        kept.push(w);
+    }
+    node.widgets.length = 0;
+    node.widgets.push(...kept);
+    if (node.inputs?.length) {
+        node.inputs = node.inputs.filter((inp) => !RETIRED_CENSOR_WIDGET_NAMES.has(inp?.name));
     }
 }
 
@@ -1449,6 +1469,7 @@ function tidyCensorWidgets(node) {
     };
     for (const name of [
         "auto_rotate",
+        "uniform_pack",
         "min_size",
         "max_size",
         "size_ratio",
@@ -1473,29 +1494,21 @@ function tidyCensorWidgets(node) {
     hideSyncedCensorAngle(node);
 }
 
-function censorLayoutKey(node, wv, sw, stampSrc) {
-    const custom = customStampKey(stampSrc);
-    return JSON.stringify({
-        p: custom || sw.stamp_preset || "",
-        c: custom ? "" : String(sw.stamp_color || ""),
-        t: readNumberFrom(wv, "target_coverage", 0.8),
-        r: readNumberFrom(wv, "size_ratio", 0.28),
-        sp: readNumberFrom(wv, "spacing_factor", 0.3),
-        min: readNumberFrom(wv, "min_size", 24),
-        max: readNumberFrom(wv, "max_size", 512),
-        sj: readNumberFrom(wv, "size_jitter", 0.15),
-        aj: readNumberFrom(wv, "angle_jitter", 0),
-        seed: readCensorSeed(node),
-    });
-}
-
 function readStampAngle(node) {
-    return node?.widgets?.find((x) => x.name === "stamp_angle")?.value ?? 0;
+    const w = node?.widgets?.find((x) => x.name === "stamp_angle");
+    const v = Number(w?._4aValue ?? w?.value);
+    return Number.isFinite(v) ? v : 0;
 }
 
 function writeStampAngle(node, angle) {
     const w = node?.widgets?.find((x) => x.name === "stamp_angle");
-    if (w) w.value = angle;
+    if (!w) return;
+    const n = Number(angle);
+    const cur = Number(w._4aValue ?? w.value);
+    if (Number.isFinite(cur) && Number.isFinite(n) && Math.abs(cur - n) < 1e-6) return;
+    w.value = n;
+    if (w._4aSliderEnhanced && Number.isFinite(n)) w._4aValue = n;
+    w._4aPaintSlider?.();
 }
 
 function syncCensorAngleFromLoad(censorNode) {
@@ -1506,22 +1519,34 @@ function syncCensorAngleFromLoad(censorNode) {
 function syncLoadAngleToCensors(loadNode) {
     const angle = readStampAngle(loadNode);
     for (const n of loadNode.graph?._nodes || []) {
-        if (
-            (n.type === "StampCensor4A" || n.comfyClass === "StampCensor4A") &&
-            findLinkedStampLoad(n) === loadNode
-        ) {
+        if (isCensorNode(n) && findLinkedStampLoad(n) === loadNode) {
             writeStampAngle(n, angle);
         }
     }
 }
 
-const PREVIEW_DEBOUNCE_MS = 160;
-const ANGLE_CENSOR_DEBOUNCE_MS = 80;
+function previewKey(node) {
+    if (isCensorNode(node)) {
+        const src = findLinkedStampLoad(node);
+        if (!src || !isStampLoadNode(src)) return "nostamp";
+        return JSON.stringify({
+            params: snapshotNodeParams(node),
+            seed: readCensorSeed(node),
+            stamp: snapshotNodeParams(src),
+            custom: customStampKey(src),
+            file: readImageWidgetRef(src),
+        });
+    }
+    if (isCustomStampLoadNode(node)) return `custom:${customStampKey(node) || ""}`;
+    const wv = snapshotNodeParams(node);
+    return `load:${wv.stamp_preset || ""}|${wv.stamp_color || ""}`;
+}
 
-function hookWidgets(node, refreshFn) {
+function bindPreviewRefresh(node) {
     node._4aRefreshPreview = (delay = PREVIEW_DEBOUNCE_MS) => {
         clearTimeout(node._4aPreviewTimer);
-        node._4aPreviewTimer = setTimeout(() => refreshFn(node), delay);
+        const ms = Number.isFinite(delay) ? delay : PREVIEW_DEBOUNCE_MS;
+        node._4aPreviewTimer = setTimeout(() => refreshPreview(node), ms);
     };
     for (const w of node.widgets || []) {
         if (isChromeWidget(w) || w._4aHooked) continue;
@@ -1531,87 +1556,98 @@ function hookWidgets(node, refreshFn) {
             const r = prev?.apply(this, args);
             node._4aPaintColorBar?.();
             rememberNodeParams(node);
-            if (w.name === "stamp_angle") {
-                node.setDirtyCanvas?.(true, true);
-                node._4aRefreshPreview(ANGLE_CENSOR_DEBOUNCE_MS);
-            } else {
-                node._4aRefreshPreview(PREVIEW_DEBOUNCE_MS);
-            }
+            node._4aRefreshPreview();
+            return r;
+        };
+    }
+    if (!node._4aWidgetChangeBound) {
+        node._4aWidgetChangeBound = true;
+        const prevW = node.onWidgetChanged;
+        node.onWidgetChanged = function (name, value, old, widget) {
+            const r = prevW?.apply(this, arguments);
+            if (widget && isChromeWidget(widget)) return r;
+            rememberNodeParams(this);
+            this._4aRefreshPreview();
             return r;
         };
     }
 }
 
-async function refreshStampLoadPreview(node) {
-    const wv = widgetValues(node);
-    if (isCustomStampLoadNode(node)) {
-        const picked = customStampKey(node);
-        if (!picked) {
-            setPreviewPlaceholder(node, "custom", "");
-            return;
-        }
-        const gen = (node._4aPreviewGen = (node._4aPreviewGen || 0) + 1);
-        try {
-            const custom = await loadPickedStampImage(node);
-            if (gen !== node._4aPreviewGen) return;
-            if (!custom?.img) {
+async function refreshPreview(node) {
+    if (!node) return;
+    if (isStampLoadNode(node)) {
+        const wv = snapshotNodeParams(node);
+        if (isCustomStampLoadNode(node)) {
+            const picked = customStampKey(node);
+            if (!picked) {
                 setPreviewPlaceholder(node, "custom", "");
-                return;
+            } else {
+                const gen = (node._4aPreviewGen = (node._4aPreviewGen || 0) + 1);
+                try {
+                    const custom = await loadPickedStampImage(node);
+                    if (gen !== node._4aPreviewGen) return;
+                    if (!custom?.img) {
+                        setPreviewPlaceholder(node, "custom", "");
+                    } else if (node._4aPreview?.key === custom.key && node._4aPreview.img) {
+                        node.setDirtyCanvas?.(true, true);
+                    } else {
+                        setPreviewImage(node, custom.img, custom.key);
+                    }
+                } catch (e) {
+                    if (gen !== node._4aPreviewGen) return;
+                    console.warn("[4A StampCensor] custom stamp preview failed", e);
+                    setPreviewPlaceholder(node, "error", "预览加载失败");
+                }
             }
-            if (node._4aPreview?.key === custom.key && node._4aPreview.img) {
+        } else {
+            const key = previewKey(node);
+            if (node._4aPreview?.key === key && node._4aPreview.img) {
                 node.setDirtyCanvas?.(true, true);
-                return;
+            } else {
+                const gen = (node._4aPreviewGen = (node._4aPreviewGen || 0) + 1);
+                try {
+                    const url =
+                        `/4a_stampcensor/stamp_preview?preset=${encodeURIComponent(wv.stamp_preset || "heart_solid")}` +
+                        `&color=${encodeURIComponent(wv.stamp_color || "#000000")}`;
+                    const img = await loadHtmlImage(url);
+                    if (gen !== node._4aPreviewGen) return;
+                    setPreviewImage(node, img, key);
+                } catch (e) {
+                    if (gen !== node._4aPreviewGen) return;
+                    console.warn("[4A StampCensor] stamp preview failed", e);
+                    setPreviewPlaceholder(node, "error", "预览加载失败");
+                }
             }
-            setPreviewImage(node, custom.img, custom.key);
-        } catch (e) {
-            if (gen !== node._4aPreviewGen) return;
-            console.warn("[4A StampCensor] custom stamp preview failed", e);
-            setPreviewPlaceholder(node, "error", "预览加载失败");
+        }
+        syncLoadAngleToCensors(node);
+        for (const n of node.graph?._nodes || []) {
+            if (isCensorNode(n) && findLinkedStampLoad(n) === node) {
+                refreshPreview(n);
+            }
         }
         return;
     }
-    const key = `${wv.stamp_preset}|${wv.stamp_color}`;
+    if (!isCensorNode(node)) return;
+    const stampSrc = findLinkedStampLoad(node);
+    if (!stampSrc || !isStampLoadNode(stampSrc)) {
+        setPreviewPlaceholder(node, "nostamp", "");
+        return;
+    }
+    syncCensorAngleFromLoad(node);
+    const wv = snapshotNodeParams(node);
+    const sw = snapshotNodeParams(stampSrc);
+    const key = previewKey(node);
     if (node._4aPreview?.key === key && node._4aPreview.img) {
         node.setDirtyCanvas?.(true, true);
         return;
     }
     const gen = (node._4aPreviewGen = (node._4aPreviewGen || 0) + 1);
     try {
-        const url =
-            `/4a_stampcensor/stamp_preview?preset=${encodeURIComponent(wv.stamp_preset || "heart_wobbly_a")}` +
-            `&color=${encodeURIComponent(wv.stamp_color || "#000000")}`;
-        const img = await loadHtmlImage(url);
-        if (gen !== node._4aPreviewGen) return;
-        setPreviewImage(node, img, key);
-    } catch (e) {
-        if (gen !== node._4aPreviewGen) return;
-        console.warn("[4A StampCensor] stamp preview failed", e);
-        setPreviewPlaceholder(node, "error", "预览加载失败");
-    }
-}
-
-async function refreshCensorDemo(node) {
-    const stampSrc = findLinkedStampLoad(node);
-    if (!stampSrc || !isStampLoadNode(stampSrc)) {
-        setPreviewPlaceholder(node, "nostamp", "");
-        return;
-    }
-    const wv = widgetValues(node);
-    const sw = widgetValues(stampSrc);
-    const layoutKey = censorLayoutKey(node, wv, sw, stampSrc);
-    const seed = readCensorSeed(node);
-    const autoRotate = readBoolFrom(wv, "auto_rotate", true);
-    const stampAngle = readNumberFrom(sw, "stamp_angle", 0);
-    const key = `${layoutKey}|a:${autoRotate ? 1 : 0}|ang:${stampAngle}`;
-    if (node._4aPreview?.key === key && node._4aPreview.img) return;
-    const reuseLayout = node._4aPreview?.layoutKey === layoutKey && !!node._4aPreview.img;
-    const gen = (node._4aPreviewGen = (node._4aPreviewGen || 0) + 1);
-    try {
         const customRef = readImageWidgetRef(stampSrc);
         const body = {
-            preset: sw.stamp_preset || "heart_wobbly_a",
+            preset: sw.stamp_preset || "heart_solid",
             color: sw.stamp_color || "#000000",
-            stamp_angle: stampAngle,
+            stamp_angle: readStampAngle(stampSrc),
             target_coverage: readNumberFrom(wv, "target_coverage", 0.8),
             size_ratio: readNumberFrom(wv, "size_ratio", 0.28),
             min_size: readNumberFrom(wv, "min_size", 24),
@@ -1619,10 +1655,9 @@ async function refreshCensorDemo(node) {
             spacing_factor: readNumberFrom(wv, "spacing_factor", 0.3),
             size_jitter: readNumberFrom(wv, "size_jitter", 0.15),
             angle_jitter: readNumberFrom(wv, "angle_jitter", 0),
-            auto_rotate: autoRotate,
-            seed,
-            layout_key: layoutKey,
-            reuse_layout: reuseLayout,
+            auto_rotate: readBoolFrom(wv, "auto_rotate", true),
+            uniform_pack: readBoolFrom(wv, "uniform_pack", false),
+            seed: readCensorSeed(node),
         };
         if (customRef?.filename) {
             body.custom_filename = customRef.filename;
@@ -1646,10 +1681,6 @@ async function refreshCensorDemo(node) {
         });
         if (gen !== node._4aPreviewGen) return;
         setPreviewImage(node, img, key);
-        if (node._4aPreview) {
-            node._4aPreview.layoutKey = layoutKey;
-            node._4aPreview.autoRotate = autoRotate;
-        }
     } catch (e) {
         if (gen !== node._4aPreviewGen) return;
         console.warn("[4A StampCensor] demo preview failed", e);
@@ -1671,6 +1702,7 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
             shrinkCustomLoadIfBloated(node);
         }
         requestAnimationFrame(() => applyPreviewMinSize(node));
+        bindPreviewRefresh(node);
         syncEnhancedFromWidgets(node);
         node._4aRefreshPreview?.();
         return;
@@ -1690,10 +1722,7 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
         shrinkCustomLoadIfBloated(node);
         requestAnimationFrame(() => applyPreviewMinSize(node));
     }
-    hookWidgets(node, (n) => {
-        syncLoadAngleToCensors(n);
-        refreshStampLoadPreview(n);
-    });
+    bindPreviewRefresh(node);
     if (!node._4aConnHooked) {
         node._4aConnHooked = true;
         const old = node.onConnectionsChange;
@@ -1725,7 +1754,11 @@ function applyStampPresets(node, names) {
     w.options = { ...(w.options || {}), values };
     if (w.value && values.includes(w.value)) return false;
     if (w.value != null && String(w.value).trim() !== "") return false;
-    w.value = names.includes("heart_wobbly_a") ? "heart_wobbly_a" : names[0];
+    w.value = names.includes("heart_solid")
+        ? "heart_solid"
+        : names.includes("heart_wobbly_a")
+          ? "heart_wobbly_a"
+          : names[0];
     return true;
 }
 
@@ -1768,12 +1801,14 @@ function setupStampCustomLoad(node) {
 function setupStampCensor(node) {
     if (node._4aUiReady) {
         stripSeedWidgets(node);
+        stripRetiredCensorWidgets(node);
         ensureSeedInput(node);
         tidyCensorWidgets(node);
         enhanceNodeSliders(node);
         hideSyncedCensorAngle(node);
+        requestAnimationFrame(() => hideSyncedCensorAngle(node));
         attachCanvasPreview(node, "square");
-        hookWidgets(node, refreshCensorDemo);
+        bindPreviewRefresh(node);
         syncEnhancedFromWidgets(node);
         node._4aRefreshPreview?.();
         return;
@@ -1783,37 +1818,23 @@ function setupStampCensor(node) {
     node.resizable = true;
     stripBrokenPreviewWidgets(node);
     stripSeedWidgets(node);
+    stripRetiredCensorWidgets(node);
     ensureSeedInput(node);
     tidyCensorWidgets(node);
     enhanceNodeSliders(node);
     hideSyncedCensorAngle(node);
+    requestAnimationFrame(() => hideSyncedCensorAngle(node));
     attachCanvasPreview(node, "square");
     applyPreviewMinSize(node);
-    hookWidgets(node, refreshCensorDemo);
+    bindPreviewRefresh(node);
     syncCensorAngleFromLoad(node);
     if (!node._4aConnHooked) {
         node._4aConnHooked = true;
         const old = node.onConnectionsChange;
         node.onConnectionsChange = function (...args) {
-            const r = old?.apply(this, args);
+            const r = old?.apply(this, arguments);
             syncCensorAngleFromLoad(this);
             this._4aRefreshPreview?.();
-            const src = findLinkedStampLoad(this);
-            if (src && isStampLoadNode(src) && !src._4aLinkedToCensor) {
-                src._4aLinkedToCensor = true;
-                const prev = src._4aRefreshPreview;
-                src._4aRefreshPreview = (delay) => {
-                    prev?.(delay);
-                    for (const n of this.graph?._nodes || []) {
-                        if (
-                            (n.type === "StampCensor4A" || n.comfyClass === "StampCensor4A") &&
-                            findLinkedStampLoad(n) === src
-                        ) {
-                            n._4aRefreshPreview?.(delay);
-                        }
-                    }
-                };
-            }
             return r;
         };
     }
@@ -1863,6 +1884,12 @@ app.registerExtension({
             const prevCfg = nodeType.prototype.onConfigure;
             nodeType.prototype.onConfigure = function (info) {
                 const r = prevCfg?.apply(this, arguments);
+                if (nodeData?.name === "StampCensor4A") {
+                    stripRetiredCensorWidgets(this);
+                    tidyCensorWidgets(this);
+                    hideSyncedCensorAngle(this);
+                    requestAnimationFrame(() => hideSyncedCensorAngle(this));
+                }
                 syncEnhancedFromWidgets(this);
                 return r;
             };

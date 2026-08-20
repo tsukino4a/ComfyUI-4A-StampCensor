@@ -72,16 +72,16 @@ class StampCensor4A:
                     },
                 ),
                 "size_ratio": slider_float(
-                    0.28, 0.02, 1.0, 0.01,
-                    "Stamp size as a fraction of the region's longer side, before min/max clamp.",
+                    0.28, 0.0, 2.0, 0.01,
+                    "Stamp size as a fraction of the region's shorter side (1.0 = fill that width), before min/max clamp. Even pack: fraction of local scan width or the region's short axis; 1.0 = fill that span.",
                 ),
                 "target_coverage": slider_float(
                     0.8, 0.05, 1.0, 0.01,
-                    "Stop placing stamps in a region when this fraction of its mask is covered.",
+                    "Stop placing stamps in a region when this fraction of its mask is covered. Even pack: if a region got only one stamp and landed within 0.20 above this target, one extra stamp is placed.",
                 ),
                 "spacing_factor": slider_float(
                     0.3, 0.0, 2.0, 0.01,
-                    "Collision size of each stamp. 0 = allow full overlap. 1.0 = oriented boxes just touch.",
+                    "Collision size of each stamp. 0 = allow full overlap. 1.0 = oriented boxes just touch. Even pack: overlap gate only; sites stay on the size-based skeleton. Below 1 overlaps, 1.0 = just touch.",
                 ),
                 "size_jitter": slider_float(
                     0.15, 0.0, 0.9, 0.01,
@@ -90,6 +90,13 @@ class StampCensor4A:
                 "angle_jitter": slider_float(
                     0.0, 0.0, 180.0, 0.5,
                     "Extra random rotation in degrees, added after auto-rotate or the load angle.",
+                ),
+                "uniform_pack": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "On: slender regions scan the long axis; squat regions size to the short axis and brick-stagger. Coverage / min / max / spacing / size ratio / jitter still apply. Off: random samples.",
+                    },
                 ),
                 "stamp_angle": (
                     "FLOAT",
@@ -132,6 +139,7 @@ class StampCensor4A:
         size_jitter,
         angle_jitter,
         auto_rotate,
+        uniform_pack=False,
         spacing_factor=0.3,
         stamp_angle=0.0,
         seed=None,
@@ -171,6 +179,7 @@ class StampCensor4A:
                 size_jitter=float(size_jitter),
                 angle_jitter=float(angle_jitter),
                 auto_rotate=bool(auto_rotate),
+                uniform_pack=bool(uniform_pack),
                 stamp_angle=float(stamp_angle),
                 seed=base_seed + i,
             )

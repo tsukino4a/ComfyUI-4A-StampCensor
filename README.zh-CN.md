@@ -4,7 +4,7 @@
 
 用贴纸 / 图案铺在遮罩上打码，替代马赛克。内置纯白（或白底黑稿）预设可用色盘上色；自定义 PNG 走自己的透明通道。检测和膨胀请用 SAM / Impact / Grow Mask，本插件不做。
 
-**当前版本：1.0.0** — 贴纸加载、自定义贴纸加载、贴纸打码，节点内可预览。
+**当前版本：1.1.0** — 均匀分布铺点，节点内可预览。
 
 <img src="docs/images/hero-v2.png" alt="总览" width="720">
 
@@ -44,6 +44,12 @@
 接 `image` + `mask` + `stamp`。每个连通区域单独算长边朝向（可关）、随机尺寸和旋转矩形碰撞，直到达到**覆盖率**。过小的碎点（比如 SAM 噪点）会按整图比例自动丢掉。贴纸可以溢出遮罩。接好贴纸后，节点底部会更新演示预览。
 
 <img src="docs/images/stamp_censor-v2.png" alt="贴纸打码" width="720">
+
+### 均匀分布
+
+打开**均匀分布**后不再随机抽样，而是按更整齐的骨架铺。细长遮罩沿长边扫描，尺寸跟局部宽度走（`1.0` = 贴满这段宽度）；偏胖 / 接近 1:1 的区域按短边定尺，再二维铺开。覆盖率、尺寸比例、间距、抖动、自动旋转和种子仍然生效。
+
+<img src="docs/images/stamp_even_pack.png" alt="均匀分布（占位图）" width="720">
 
 ### 自动旋转
 
@@ -94,7 +100,7 @@ Impact Pack YOLO NSFW · [`02_ImpactPack_NSFW_StampCensor.json`](example_workflo
 | [`assets/`](assets/) | 内置预设。启动时扫描全部 `.png`，**不包括** `demo_scene.png` |
 | [`assets/demo_scene.png`](assets/demo_scene.png) | 内部演示底图，不会出现在贴纸列表里 |
 
-格式要求和刷新方式见上面的 **自定义贴纸**。随包装的形状（顺序固定，多出来的文件排在后面）：`heart_standard`、`heart_wobbly_a`、`heart_soft`、`bar_h_scribble`、`bar_h_thick`、`star_wobbly`、`circle_scribble`、`cross_x`。
+格式要求和刷新方式见上面的 **自定义贴纸**。随包装的形状（顺序固定，多出来的文件排在后面）：`heart_solid`、`heart_standard`、`heart_wobbly_a`、`heart_soft`、`bar_h_scribble`、`bar_h_thick`、`star_wobbly`、`circle_scribble`、`cross_x`。
 
 ## 依赖
 

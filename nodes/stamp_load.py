@@ -18,7 +18,7 @@ class StampLoad4A:
                 "stamp_preset": (
                     PRESET_NAMES,
                     {
-                        "default": "heart_wobbly_a",
+                        "default": "heart_solid",
                         "tooltip": "Built-in stamp shape.",
                     },
                 ),

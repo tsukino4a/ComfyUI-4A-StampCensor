@@ -61,11 +61,11 @@
       },
       "target_coverage": {
         "name": "Coverage",
-        "tooltip": "Stop placing stamps in a region when this fraction of its mask is covered."
+        "tooltip": "Stop placing stamps in a region when this fraction of its mask is covered. Even pack: if a region got only one stamp and landed within 0.20 above this target, one extra stamp is placed."
       },
       "size_ratio": {
         "name": "Size Ratio",
-        "tooltip": "Stamp size as a fraction of the region's longer side, before min/max clamp."
+        "tooltip": "Stamp opaque bbox as a fraction of the region's shorter side (1.0 = fill that width), before min/max clamp. Even pack: fraction of local scan width or the region's short axis; 1.0 = fill that span."
       },
       "min_size": {
         "name": "Min Size",
@@ -77,7 +77,7 @@
       },
       "spacing_factor": {
         "name": "Spacing",
-        "tooltip": "Collision size of each stamp. 0 allows full overlap, useful for hollow shapes like a cross. 1.0 = oriented boxes just touch."
+        "tooltip": "Collision size of each stamp. 0 allows full overlap, useful for hollow shapes like a cross. 1.0 = oriented boxes just touch. Even pack: overlap gate only; sites stay on the size-based skeleton. Below 1 overlaps, 1.0 = just touch, higher = sparser."
       },
       "size_jitter": {
         "name": "Size Jitter",
@@ -90,6 +90,10 @@
       "auto_rotate": {
         "name": "Auto Rotate",
         "tooltip": "On: align to each mask region's long axis, then add the Stamp Load angle. Off: use the Stamp Load angle only."
+      },
+      "uniform_pack": {
+        "name": "Even Pack",
+        "tooltip": "On: slender regions scan the long axis; squat regions size to the short axis and brick-stagger. Coverage / min / max / spacing / size ratio / jitter still apply. Off: random samples."
       },
       "stamp_angle": {
         "name": "Angle",
