@@ -715,6 +715,7 @@ function enhanceCompactSlider(node, widget) {
     widget._4aSliderEnhanced = true;
     ensureSliderStyles();
     hideWidgetSlot(widget);
+    widget.serialize = true;
     if (!Number.isFinite(Number(widget._4aValue))) {
         const raw = Number(widget.value);
         widget._4aValue = Number.isFinite(raw) ? raw : Number.isFinite(widget.options?.default) ? widget.options.default : 0;
@@ -907,15 +908,12 @@ function restoreNodeParams(node, snap) {
     node._4aPaintColorBar?.();
 }
 
-function syncEnhancedFromWidgets(node) {
+function adoptNativeSliderValues(node) {
     for (const w of node.widgets || []) {
         if (!w._4aSliderEnhanced) continue;
-        const fromUi = Number(w._4aValue);
         const fromNative = Number(w.value);
-        const raw = Number.isFinite(fromUi) ? fromUi : fromNative;
-        if (!Number.isFinite(raw)) continue;
-        w._4aValue = raw;
-        w.value = raw;
+        if (!Number.isFinite(fromNative)) continue;
+        w._4aValue = fromNative;
         w._4aPaintSlider?.();
     }
     node._4aPaintColorBar?.();
@@ -927,6 +925,48 @@ function restoreAllRememberedParams() {
         if (!isStampPackNode(n)) continue;
         restoreNodeParams(n, n._4aSavedParams);
     }
+}
+
+const CENSOR_WIDGET_NAMES = [
+    "auto_rotate",
+    "min_size",
+    "max_size",
+    "size_ratio",
+    "target_coverage",
+    "spacing_factor",
+    "size_jitter",
+    "angle_jitter",
+    "uniform_pack",
+    "stamp_angle",
+];
+const LOAD_WIDGET_NAMES = ["stamp_preset", "stamp_color", "stamp_angle"];
+const CUSTOM_LOAD_WIDGET_NAMES = ["image", "stamp_angle"];
+
+function writeWidgetsValues(node, names, o) {
+    if (!node || !o || !names?.length) return;
+    for (const w of node.widgets || []) {
+        if (w._4aSliderEnhanced && Number.isFinite(Number(w._4aValue))) w.value = Number(w._4aValue);
+    }
+    o.widgets_values = names.map((name) => node.widgets?.find((x) => x.name === name)?.value);
+}
+
+function scheduleNodeUi(node, setupFn) {
+    if (!node || node._4aUiTimer) return;
+    node._4aUiTimer = requestAnimationFrame(() => {
+        node._4aUiTimer = 0;
+        if (node._4aUiFromGraph) return;
+        setupFn(node);
+    });
+}
+
+function setupFromGraph(node, setupFn) {
+    if (!node) return;
+    node._4aUiFromGraph = true;
+    if (node._4aUiTimer) {
+        cancelAnimationFrame(node._4aUiTimer);
+        node._4aUiTimer = 0;
+    }
+    setupFn(node);
 }
 
 function readNumberFrom(values, name, fallback) {
@@ -1359,6 +1399,7 @@ function hideSyncedCensorAngle(node) {
         hideWidgetSlot(w);
         if (!w) return;
         w.options = { ...(w.options || {}), hideInPanel: true, hidden: true };
+        if (w.name === "stamp_angle") w.serialize = true;
     };
     hideOne(node.widgets?.find((x) => x.name === "stamp_angle"));
     for (const sl of node.widgets || []) {
@@ -1689,28 +1730,15 @@ async function refreshPreview(node) {
 }
 
 function setupStampSourceNode(node, { imageDrop = false } = {}) {
+    const first = !node._4aUiReady;
+    node._4aUiReady = true;
     if (!imageDrop) stripLegacyCustomImageWidgets(node);
     if (imageDrop) compactOfficialImagePreview(node);
-    if (node._4aUiReady) {
-        const colorW = node.widgets?.find((w) => w.name === "stamp_color");
-        if (colorW) enhanceStampColorWidget(node, colorW);
-        enhanceNodeSliders(node);
-        attachCanvasPreview(node, "square");
-        applyPreviewMinSize(node);
-        if (imageDrop) {
-            attachImageDrop(node);
-            shrinkCustomLoadIfBloated(node);
-        }
-        requestAnimationFrame(() => applyPreviewMinSize(node));
-        bindPreviewRefresh(node);
-        syncEnhancedFromWidgets(node);
-        node._4aRefreshPreview?.();
-        return;
+    if (first) {
+        node.imgs = null;
+        node.resizable = true;
+        stripBrokenPreviewWidgets(node);
     }
-    node._4aUiReady = true;
-    node.imgs = null;
-    node.resizable = true;
-    stripBrokenPreviewWidgets(node);
     const colorW = node.widgets?.find((w) => w.name === "stamp_color");
     if (colorW) enhanceStampColorWidget(node, colorW);
     enhanceNodeSliders(node);
@@ -1723,7 +1751,7 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
         requestAnimationFrame(() => applyPreviewMinSize(node));
     }
     bindPreviewRefresh(node);
-    if (!node._4aConnHooked) {
+    if (first && !node._4aConnHooked) {
         node._4aConnHooked = true;
         const old = node.onConnectionsChange;
         node.onConnectionsChange = function (...args) {
@@ -1732,8 +1760,8 @@ function setupStampSourceNode(node, { imageDrop = false } = {}) {
             return r;
         };
     }
-    syncEnhancedFromWidgets(node);
-    node._4aRefreshPreview();
+    adoptNativeSliderValues(node);
+    node._4aRefreshPreview?.();
 }
 
 let _lastStampPresets = null;
@@ -1799,24 +1827,13 @@ function setupStampCustomLoad(node) {
 }
 
 function setupStampCensor(node) {
-    if (node._4aUiReady) {
-        stripSeedWidgets(node);
-        stripRetiredCensorWidgets(node);
-        ensureSeedInput(node);
-        tidyCensorWidgets(node);
-        enhanceNodeSliders(node);
-        hideSyncedCensorAngle(node);
-        requestAnimationFrame(() => hideSyncedCensorAngle(node));
-        attachCanvasPreview(node, "square");
-        bindPreviewRefresh(node);
-        syncEnhancedFromWidgets(node);
-        node._4aRefreshPreview?.();
-        return;
-    }
+    const first = !node._4aUiReady;
     node._4aUiReady = true;
-    node.imgs = null;
-    node.resizable = true;
-    stripBrokenPreviewWidgets(node);
+    if (first) {
+        node.imgs = null;
+        node.resizable = true;
+        stripBrokenPreviewWidgets(node);
+    }
     stripSeedWidgets(node);
     stripRetiredCensorWidgets(node);
     ensureSeedInput(node);
@@ -1825,21 +1842,23 @@ function setupStampCensor(node) {
     hideSyncedCensorAngle(node);
     requestAnimationFrame(() => hideSyncedCensorAngle(node));
     attachCanvasPreview(node, "square");
-    applyPreviewMinSize(node);
+    if (first) applyPreviewMinSize(node);
     bindPreviewRefresh(node);
-    syncCensorAngleFromLoad(node);
-    if (!node._4aConnHooked) {
-        node._4aConnHooked = true;
-        const old = node.onConnectionsChange;
-        node.onConnectionsChange = function (...args) {
-            const r = old?.apply(this, arguments);
-            syncCensorAngleFromLoad(this);
-            this._4aRefreshPreview?.();
-            return r;
-        };
+    if (first) {
+        syncCensorAngleFromLoad(node);
+        if (!node._4aConnHooked) {
+            node._4aConnHooked = true;
+            const old = node.onConnectionsChange;
+            node.onConnectionsChange = function (...args) {
+                const r = old?.apply(this, arguments);
+                syncCensorAngleFromLoad(this);
+                this._4aRefreshPreview?.();
+                return r;
+            };
+        }
     }
-    syncEnhancedFromWidgets(node);
-    node._4aRefreshPreview();
+    adoptNativeSliderValues(node);
+    node._4aRefreshPreview?.();
 }
 
 app.registerExtension({
@@ -1851,7 +1870,6 @@ app.registerExtension({
         } catch (e) {
             console.warn("[4A StampCensor] preset refresh on load failed", e);
         }
-        restoreAllRememberedParams();
     },
 
     async refreshComboInNodes() {
@@ -1861,8 +1879,6 @@ app.registerExtension({
             console.warn("[4A StampCensor] preset refresh on R failed", e);
         }
         restoreAllRememberedParams();
-        requestAnimationFrame(restoreAllRememberedParams);
-        setTimeout(restoreAllRememberedParams, 50);
     },
 
     getCustomWidgets() {
@@ -1881,61 +1897,44 @@ app.registerExtension({
             nodeData?.name === "StampCustomLoad4A" ||
             nodeData?.name === "StampCensor4A"
         ) {
+            const setup =
+                nodeData.name === "StampCensor4A"
+                    ? setupStampCensor
+                    : nodeData.name === "StampCustomLoad4A"
+                      ? setupStampCustomLoad
+                      : setupStampLoad;
             const prevCfg = nodeType.prototype.onConfigure;
             nodeType.prototype.onConfigure = function (info) {
                 const r = prevCfg?.apply(this, arguments);
-                if (nodeData?.name === "StampCensor4A") {
-                    stripRetiredCensorWidgets(this);
-                    tidyCensorWidgets(this);
-                    hideSyncedCensorAngle(this);
-                    requestAnimationFrame(() => hideSyncedCensorAngle(this));
-                }
-                syncEnhancedFromWidgets(this);
+                setupFromGraph(this, setup);
+                if (nodeData.name !== "StampCensor4A") syncLoadAngleToCensors(this);
                 return r;
             };
-        }
-        if (nodeData?.name === "StampLoad4A" || nodeData?.name === "StampCustomLoad4A") {
-            const prev = nodeType.prototype.onNodeCreated;
-            const setup = nodeData.name === "StampCustomLoad4A" ? setupStampCustomLoad : setupStampLoad;
+            const prevSer = nodeType.prototype.onSerialize;
+            nodeType.prototype.onSerialize = function (o) {
+                const r = prevSer?.apply(this, arguments);
+                const names =
+                    nodeData.name === "StampCensor4A"
+                        ? CENSOR_WIDGET_NAMES
+                        : nodeData.name === "StampCustomLoad4A"
+                          ? CUSTOM_LOAD_WIDGET_NAMES
+                          : LOAD_WIDGET_NAMES;
+                writeWidgetsValues(this, names, o);
+                return r;
+            };
+            const prevCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
-                const r = prev?.apply(this, arguments);
-                setup(this);
+                const r = prevCreated?.apply(this, arguments);
+                scheduleNodeUi(this, setup);
                 return r;
             };
-        }
-        if (nodeData?.name === "StampCensor4A") {
-            const prev = nodeType.prototype.onNodeCreated;
-            nodeType.prototype.onNodeCreated = function () {
-                const r = prev?.apply(this, arguments);
-                setupStampCensor(this);
-                return r;
-            };
-        }
-    },
-
-    async nodeCreated(node) {
-        if (isBuiltinStampLoadNode(node)) setupStampLoad(node);
-        if (isCustomStampLoadNode(node)) setupStampCustomLoad(node);
-        if (node.comfyClass === "StampCensor4A" || node.type === "StampCensor4A") {
-            setupStampCensor(node);
         }
     },
 
     loadedGraphNode(node) {
-        if (isBuiltinStampLoadNode(node)) {
-            setupStampLoad(node);
-            syncEnhancedFromWidgets(node);
-            syncLoadAngleToCensors(node);
-        }
-        if (isCustomStampLoadNode(node)) {
-            setupStampCustomLoad(node);
-            syncEnhancedFromWidgets(node);
-            syncLoadAngleToCensors(node);
-        }
-        if (node.comfyClass === "StampCensor4A" || node.type === "StampCensor4A") {
-            setupStampCensor(node);
-            syncEnhancedFromWidgets(node);
-            syncCensorAngleFromLoad(node);
-        }
+        if (isBuiltinStampLoadNode(node)) setupFromGraph(node, setupStampLoad);
+        else if (isCustomStampLoadNode(node)) setupFromGraph(node, setupStampCustomLoad);
+        else if (isCensorNode(node)) setupFromGraph(node, setupStampCensor);
+        if (isStampLoadNode(node)) syncLoadAngleToCensors(node);
     },
 });

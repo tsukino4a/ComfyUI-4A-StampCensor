@@ -1,6 +1,6 @@
 [project]
 name = "4a-stamp-censor"
-version = "1.1.0"
+version = "1.1.1"
 description = "Scatter stamp/sticker shapes over a mask instead of mosaic. Built-in white or black-on-white presets can be tinted; custom PNGs keep their own alpha."
 readme = "README.md"
 license = { file = "LICENSE" }
